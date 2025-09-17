@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String  @id
+  name          String
+  email         String
+  emailVerified Boolean @default(false)
+  image         String? @db.VarChar(512)
+
+  role              String  @default("user")
+  isProfileComplete Boolean @default(false)
+
+  userId String? @unique @db.Citext // Enable the citext extension in your Postgres database manually //CREATE EXTENSION IF NOT EXISTS citext;
+
+  telegramHandle String? @db.VarChar(64)
+
+  cityId Int?
+  city   City? @relation(fields: [cityId], references: [id])
+
+  cityLastChangedAt DateTime? // enforce 10-day cooldown in app logic
+
+  verified   Boolean   @default(false)
+  verifiedAt DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+  sessions  Session[]
+  accounts  Account[]
+
+  //indexed so you can quickly find all users in a city
+  @@unique([email])
+  @@index([cityId])
+  @@index([verified])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@map("verification")
+}
+
+model City {
+  id Int @id @default(autoincrement())
+
+  // Canonical display name (e.g., "Torino")
+  name String @db.VarChar(120)
+
+  // URL/lookup key (lowercase, hyphenated, e.g., "torino")
+  slug String @unique @db.VarChar(120)
+
+  // Administrative info (optional but useful in Italy)
+  region       String? @db.VarChar(120) // e.g., "Piemonte"
+  province     String? @db.VarChar(120) // e.g., "Torino"
+  provinceCode String? @db.VarChar(4) // e.g., "TO"
+
+  // Map support (optional)
+  lat Decimal? @db.Decimal(9, 6)
+  lng Decimal? @db.Decimal(9, 6)
+
+  // Alternate names / spellings (e.g., "Turin")
+  altNames String[] @default([])
+
+  // Operational controls
+  isActive  Boolean @default(true)
+  sortOrder Int? // optional manual ordering for UI lists
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  User      User[]
+
+  @@index([name])
+  @@index([region])
+  @@index([provinceCode])
+  @@map("cities")
+}
