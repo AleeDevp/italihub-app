@@ -1,0 +1,66 @@
+/* Container Card CSS Custom Properties for Mathematical Radius Calculations */
+
+:root {
+  /* Base container card radius values */
+  --container-card-outer-radius: 12px;
+  --container-card-gap: 4px;
+
+  /* Computed inner radius using CSS calc() */
+  --container-card-inner-radius: calc(
+    var(--container-card-outer-radius) - var(--container-card-gap)
+  );
+
+  /* Variant-specific radius values */
+  --container-card-outer-radius-sm: 8px;
+  --container-card-inner-radius-sm: calc(
+    var(--container-card-outer-radius-sm) - var(--container-card-gap)
+  );
+
+  --container-card-outer-radius-lg: 16px;
+  --container-card-inner-radius-lg: calc(
+    var(--container-card-outer-radius-lg) - var(--container-card-gap)
+  );
+
+  --container-card-outer-radius-xl: 20px;
+  --container-card-inner-radius-xl: calc(
+    var(--container-card-outer-radius-xl) - var(--container-card-gap)
+  );
+}
+
+/* Container card size variants */
+.container-card-sm {
+  --container-card-outer-radius: var(--container-card-outer-radius-sm);
+  --container-card-inner-radius: var(--container-card-inner-radius-sm);
+}
+
+.container-card-lg {
+  --container-card-outer-radius: var(--container-card-outer-radius-lg);
+  --container-card-inner-radius: var(--container-card-inner-radius-lg);
+}
+
+.container-card-xl {
+  --container-card-outer-radius: var(--container-card-outer-radius-xl);
+  --container-card-inner-radius: var(--container-card-inner-radius-xl);
+}
+
+/* Custom gap variants */
+.container-card-gap-2 {
+  --container-card-gap: 2px;
+  --container-card-inner-radius: calc(
+    var(--container-card-outer-radius) - var(--container-card-gap)
+  );
+}
+
+.container-card-gap-6 {
+  --container-card-gap: 6px;
+  --container-card-inner-radius: calc(
+    var(--container-card-outer-radius) - var(--container-card-gap)
+  );
+}
+
+.container-card-gap-8 {
+  --container-card-gap: 8px;
+  --container-card-inner-radius: calc(
+    var(--container-card-outer-radius) - var(--container-card-gap)
+  );
+}
