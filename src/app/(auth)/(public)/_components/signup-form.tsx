@@ -28,6 +28,8 @@ import { signupFormSchema } from '@/lib/schemas/auth_validation';
 import { cn } from '@/lib/utils';
 import { MailCheck } from 'lucide-react';
 
+import Image from 'next/image';
+
 type SignupFormValues = z.infer<typeof signupFormSchema>;
 
 export function SignupForm({ className, ...props }: React.ComponentProps<'div'>) {
@@ -188,10 +190,15 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
             </Form>
           </div>
           <div className="bg-muted relative hidden md:block">
-            <img
-              src="/placeholder.svg"
-              alt="Italian landscape"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+            <Image
+              src="/auth/group-people.png"
+              alt="Login poster"
+              fill={true}
+              loading="eager"
+              placeholder="blur"
+              blurDataURL="/auth/group-people-blur.png"
+              objectFit="cover"
+              objectPosition="center"
             />
           </div>
         </CardContent>

@@ -29,6 +29,7 @@ import { signIn } from '@/lib/actions/auth-actions';
 import { useSession } from '@/lib/auth-client';
 import { loginFormSchema } from '@/lib/schemas/auth_validation';
 import { MailCheck } from 'lucide-react';
+import Image from 'next/image';
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 
@@ -206,10 +207,15 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
             </Form>
           </div>
           <div className="bg-muted relative hidden md:block">
-            <img
-              src="/placeholder.svg"
-              alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+            <Image
+              src="/auth/group-people.png"
+              alt="Login poster"
+              fill={true}
+              loading="eager"
+              placeholder="blur"
+              blurDataURL="/auth/group-people-blur.png"
+              objectFit="cover"
+              objectPosition="center"
             />
           </div>
         </CardContent>

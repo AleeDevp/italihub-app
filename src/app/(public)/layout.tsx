@@ -9,9 +9,10 @@ export default async function PublicLayout({
   const session = await getServerSession();
 
   return (
-    <>
+    <div className="relative min-h-screen bg-[#f8cfd9]">
+      {/* <GradientBackground className="absolute inset-0 -z-10" /> */}
       <Header session={session ?? null} />
-      <main>{children}</main>
-    </>
+      <main className="home">{children}</main>
+    </div>
   );
 }

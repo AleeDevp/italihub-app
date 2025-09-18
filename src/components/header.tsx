@@ -3,6 +3,7 @@ import ModeToggle from '@/components/mode-toggle';
 import { Button } from '@/components/ui/button';
 import { UserDropDownMenu } from '@/components/user-dropdownmenu';
 import { Session } from '@/lib/auth';
+import Image from 'next/image';
 import Link from 'next/link';
 
 // import { useMediaQuery } from '@/app/hooks/use-media-query';
@@ -12,16 +13,13 @@ interface HeaderProps {
 
 export function Header({ session }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-50 h-22 w-full content-end-safe  backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex  h-16 w-7/8 md:max-w-[1280px] place-self-center-safe border rounded-2xl items-center justify-between px-4">
+    <header className="home-header-wrapper">
+      <div className="home-header">
         {/* Logo and Breadcrumb Section */}
         <div className="flex items-center space-x-4">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <span className="text-sm font-bold">IH</span>
-            </div>
-            <span className="hidden font-bold sm:inline-block">ItaliHub</span>
+            <Image src="/logo.png" alt="ItaliHub Logo" width={160} height={160} />
           </Link>
 
           {/* Breadcrumb Navigation */}
@@ -32,6 +30,8 @@ export function Header({ session }: HeaderProps) {
 
         {/* Right Section - Auth & Theme Toggle */}
         <div className="flex items-center space-x-4">
+          {/* Theme Toggle */}
+          <ModeToggle />
           {/* Authentication Section */}
           {session ? (
             <UserDropDownMenu user={session.user} />
@@ -45,9 +45,6 @@ export function Header({ session }: HeaderProps) {
               </Button>
             </div>
           )}
-
-          {/* Theme Toggle */}
-          <ModeToggle />
         </div>
       </div>
     </header>
