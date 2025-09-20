@@ -13,7 +13,7 @@ export interface ContainerCardProps extends React.ComponentProps<'div'> {
   gapChildren?: React.ReactNode;
 }
 
-const ContainerCard = React.forwardRef<HTMLDivElement, ContainerCardProps>(
+const DoubleCard = React.forwardRef<HTMLDivElement, ContainerCardProps>(
   (
     {
       className,
@@ -127,18 +127,18 @@ const ContainerCard = React.forwardRef<HTMLDivElement, ContainerCardProps>(
   }
 );
 
-ContainerCard.displayName = 'ContainerCard';
+DoubleCard.displayName = 'DoubleCard';
 
 // Additional utility components for better composition
-const ContainerCardInner = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
+const DoubleCardInner = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cn('space-y-2', className)} {...props} />
   )
 );
 
-ContainerCardInner.displayName = 'ContainerCardInner';
+DoubleCardInner.displayName = 'DoubleCardInner';
 
-const ContainerCardGap = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
+const DoubleCardGap = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
@@ -148,6 +148,6 @@ const ContainerCardGap = React.forwardRef<HTMLDivElement, React.ComponentProps<'
   )
 );
 
-ContainerCardGap.displayName = 'ContainerCardGap';
+DoubleCardGap.displayName = 'DoubleCardGap';
 
-export { ContainerCard, ContainerCardGap, ContainerCardInner };
+export { DoubleCard, DoubleCardGap, DoubleCardInner };

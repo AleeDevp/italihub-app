@@ -1,5 +1,4 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
-import ModeToggle from '@/components/mode-toggle';
 import { Button } from '@/components/ui/button';
 import { UserDropDownMenu } from '@/components/user-dropdownmenu';
 import { Session } from '@/lib/auth';
@@ -13,13 +12,19 @@ interface HeaderProps {
 
 export function Header({ session }: HeaderProps) {
   return (
-    <header className="home-header-wrapper">
-      <div className="home-header">
+    <header className="w-full py-6">
+      <div className="home-header mx-auto">
         {/* Logo and Breadcrumb Section */}
         <div className="flex items-center space-x-4">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <Image src="/logo.png" alt="ItaliHub Logo" width={160} height={160} />
+            <Image
+              src="/logo.png"
+              alt="ItaliHub Logo"
+              width={160}
+              height={160}
+              className="md:w-[160px] shrink-0 mt-1.5"
+            />
           </Link>
 
           {/* Breadcrumb Navigation */}
@@ -31,7 +36,7 @@ export function Header({ session }: HeaderProps) {
         {/* Right Section - Auth & Theme Toggle */}
         <div className="flex items-center space-x-4">
           {/* Theme Toggle */}
-          <ModeToggle />
+          {/* <ModeToggle /> */}
           {/* Authentication Section */}
           {session ? (
             <UserDropDownMenu user={session.user} />

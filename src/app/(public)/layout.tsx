@@ -9,10 +9,16 @@ export default async function PublicLayout({
   const session = await getServerSession();
 
   return (
-    <div className="relative min-h-screen bg-[#f8cfd9]">
-      {/* <GradientBackground className="absolute inset-0 -z-10" /> */}
+    <div className="flex flex-col h-dvh">
       <Header session={session ?? null} />
-      <main className="home">{children}</main>
+
+      <div className="responsive-container mt-4">
+        <main>{children}</main>
+      </div>
+
+      <footer className="h-20 border-t py-4 mt-4">
+        <p className="mx-auto text-center">© 2025 alee | All rights reserved</p>
+      </footer>
     </div>
   );
 }

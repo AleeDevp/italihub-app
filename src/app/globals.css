@@ -5,7 +5,9 @@
 @import '../styles/container-card.css';
 /* @import './container.card.css'; */
 
-@custom-variant dark (&:is(.dark *));
+@import '../styles/backgrounds.css';
+
+/* @custom-variant dark (&:is(.dark *)); */
 
 :root {
   --background: oklch(0.9692 0.0192 343.9344);
@@ -56,8 +58,6 @@
   --spacing: 0.25rem;
 
   /* CUSTOM DEFINED */
-
-  --header-height: 7.25rem;
 }
 
 .dark {
@@ -178,153 +178,19 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-
-  /* main {
-    @apply min-h-screen;
-  } */
-
-  main.home {
-    /* sync with header */
-    padding-inline: calc(1 / 16 * 100%);
-    padding-top: 0.5rem;
-    padding-bottom: 2rem;
-  }
 }
 
-.home-header-wrapper {
-  position: sticky; /* sticky */
-  top: 0;
-  height: var(--header-height);
-  width: 100%;
-  display: flex; /* flex */
-  align-items: center; /* items-center */
-  justify-content: center; /* justify-center */
-  z-index: 50; /* z-50 */
+.responsive-container {
+  /* sync with header */
+  @apply mx-auto px-2;
+  @apply w-full md:max-w-[1100px];
 }
 
 .home-header {
-  @apply relative rounded-2xl p-6 bg-white/10 backdrop-blur-lg flex items-center justify-between px-4 md:max-w-[1000px] supports-[backdrop-filter]:bg-background/30 border border-white/20 dark:border-white/10;
-
+  @apply rounded-2xl p-6 bg-popover flex items-center justify-between px-4 shadow-2xl;
+  @apply md:max-w-[800px];
+  @apply border-1;
   height: 4rem;
   width: calc(7 / 8 * 100%);
-  /* 
-  border-top: 2px solid transparent;
-  border-bottom: 2px solid transparent; */
-}
-
-/* Glassy border highlights that follow rounded corners */
-.home-header::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none; /* keep content clickable */
-  z-index: 2; /* above bg, does not cover content due to mask */
-
-  /* Draw only a thin ring along the border using mask (works with rounded corners) */
-  padding: 2px; /* ring thickness */
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; /* Safari */
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude; /* Other browsers */
-
-  /* Corner-focused glossy highlights */
-  background:
-    conic-gradient(
-      from 330deg at 100% 0%,
-      rgba(255, 255, 255, 0.95) 0deg,
-      rgba(255, 255, 255, 0.5) 40deg,
-      rgba(255, 255, 255, 0.15) 75deg,
-      transparent 100deg
-    ),
-    conic-gradient(
-      from 150deg at 0% 100%,
-      rgba(255, 255, 255, 0.95) 0deg,
-      rgba(255, 255, 255, 0.5) 40deg,
-      rgba(255, 255, 255, 0.15) 75deg,
-      transparent 100deg
-    );
-}
-
-/* Subtle inner shadow + ambient edge tint for depth */
-.home-header::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 1;
-
-  /* Mask to a thin inner ring to simulate inner bevel */
-  padding: 3px; /* inner ring thickness */
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-
-  /* Ambient edge tint + faint shadow + hover shimmer sweep */
-  background:
-    radial-gradient(120% 200% at 0% 100%, rgba(255, 255, 255, 0.08), transparent 60%),
-    radial-gradient(120% 200% at 100% 0%, rgba(255, 255, 255, 0.06), transparent 60%),
-    rgba(0, 0, 0, 0.04),
-    linear-gradient(45deg, transparent 45%, rgba(255, 255, 255, 0.18) 50%, transparent 55%);
-  /* Keep first three layers static; sweep layer is oversized so it can move across */
-  background-size:
-    auto,
-    auto,
-    auto,
-    220% 220%;
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
-  /* Park the sweep off-corner initially (bottom-left to top-right travel) */
-  background-position:
-    center,
-    center,
-    center,
-    -160% 160%;
-}
-
-/* Trigger the shimmer only on hover/focus-visible */
-.home-header:hover::after,
-.home-header:focus-visible::after {
-  animation: glass-sweep 1.6s ease-in-out 1;
-}
-
-@keyframes glass-sweep {
-  0% {
-    /* Keep static layers fixed; move only the last sweep layer */
-    background-position:
-      center,
-      center,
-      center,
-      -160% 160%;
-  }
-  50% {
-    background-position:
-      center,
-      center,
-      center,
-      30% -30%;
-  }
-  100% {
-    background-position:
-      center,
-      center,
-      center,
-      160% -160%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-header:hover::after,
-  .home-header:focus-visible::after {
-    animation: none;
-  }
+  z-index: 50; /* z-50 */
 }
