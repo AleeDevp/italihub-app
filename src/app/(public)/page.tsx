@@ -2,41 +2,40 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardDescription } from '@/components/ui/card';
-import type { LucideIcon } from 'lucide-react';
-import { CreditCard, Home, Settings, ShoppingBag, Truck } from 'lucide-react';
+import Image from 'next/image';
 
 export default function HomePage() {
   const categories = [
     {
-      icon: Home,
+      image: '/home/housing-2-w-m.png',
       title: 'Housing',
       description: 'Find or offer apartments, rooms, and housing solutions across Italy',
       color: 'from-blue-500/10 to-blue-600/5',
       badge: 'Popular',
     },
     {
-      icon: CreditCard,
+      image: '/home/currency.png',
       title: 'Currency Exchange',
       description: 'Exchange EUR-IRR with verified community members',
       color: 'from-yellow-500/10 to-yellow-600/5',
       badge: 'Secure',
     },
     {
-      icon: Truck,
+      image: '/home/currency.png',
       title: 'Transportation',
       description: 'Send and receive packages between Iran and Italy',
       color: 'from-green-500/10 to-green-600/5',
       badge: 'Trusted',
     },
     {
-      icon: ShoppingBag,
+      image: '/home/market.png',
       title: 'Market',
       description: 'Buy and sell second-hand items ',
       color: 'from-purple-500/10 to-purple-600/5',
       badge: 'Active',
     },
     {
-      icon: Settings,
+      image: '/home/services.png',
       title: 'Services',
       description: 'Offer or find personal services',
       color: 'from-orange-500/10 to-orange-600/5',
@@ -48,10 +47,10 @@ export default function HomePage() {
     <div>
       {/* Categories Section Card */}
       <section className="mx-auto sm:px-10">
-        <div className="w-full grid grid-cols-3 auto-rows-[110px] md:auto-rows-[140px] gap-2 sm:gap-4">
+        <div className="w-full grid grid-cols-3 auto-rows-[130px] md:auto-rows-[140px] gap-2 sm:gap-4">
           {/* 1) Full-width top card */}
           <CategoryCard
-            icon={categories[0].icon}
+            image={categories[0].image}
             title={categories[0].title}
             description={categories[0].description}
             badge={categories[0].badge}
@@ -61,7 +60,7 @@ export default function HomePage() {
 
           {/* 2) Tall card on left spanning two rows */}
           <CategoryCard
-            icon={categories[1].icon}
+            image={categories[1].image}
             title={categories[1].title}
             description={categories[1].description}
             badge={categories[1].badge}
@@ -71,7 +70,7 @@ export default function HomePage() {
 
           {/* 3) Wide card across columns 2-3 on row 2 */}
           <CategoryCard
-            icon={categories[2].icon}
+            image={categories[2].image}
             title={categories[2].title}
             description={categories[2].description}
             badge={categories[2].badge}
@@ -81,7 +80,7 @@ export default function HomePage() {
 
           {/* 4) Bottom middle */}
           <CategoryCard
-            icon={categories[3].icon}
+            image={categories[3].image}
             title={categories[3].title}
             description={categories[3].description}
             badge={categories[3].badge}
@@ -91,7 +90,7 @@ export default function HomePage() {
 
           {/* 5) Bottom right */}
           <CategoryCard
-            icon={categories[4].icon}
+            image={categories[4].image}
             title={categories[4].title}
             description={categories[4].description}
             badge={categories[4].badge}
@@ -105,7 +104,7 @@ export default function HomePage() {
 }
 
 type CategoryCardProps = {
-  icon: LucideIcon;
+  image: string;
   title: string;
   description: string;
   badge: string;
@@ -113,14 +112,7 @@ type CategoryCardProps = {
   className?: string;
 };
 
-function CategoryCard({
-  icon: Icon,
-  title,
-  description,
-  badge,
-  color,
-  className,
-}: CategoryCardProps) {
+function CategoryCard({ image, title, description, badge, color, className }: CategoryCardProps) {
   return (
     <Card
       className={`z-10 flex relative group px-4 pb-4 overflow-hidden hover:shadow-3xl transition-shadow duration-500 ${className ?? ''}`}
@@ -131,7 +123,6 @@ function CategoryCard({
           {badge}
         </Badge>
       </div>
-
       <div className="mt-auto">
         <h1 className="font-semibold leading-5 md:text-2xl lg:text-3xl group-hover:text-primary transition-colors">
           {title}
@@ -143,8 +134,10 @@ function CategoryCard({
           </CardDescription>
         </div>
       </div>
-
-      <Icon className="absolute inset-0 w-60 h-60 text-pink-100 -z-10" />
+      <Image src={image} alt={title} fill className="object-cover object-[50%_65%] -z-10" />
+      {/* 50% x-axis, 30% y-axis */}
+      {/* White gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-white/100 via-white/30  to-transparent -z-10" />
       {/* Hover Effect Overlay */}
       {/* <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" /> */}
     </Card>

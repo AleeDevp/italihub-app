@@ -9,14 +9,14 @@ export default async function PublicLayout({
   const session = await getServerSession();
 
   return (
-    <div className="flex flex-col h-dvh">
+    <div className="flex flex-col h-dvh bg-white">
       <Header session={session ?? null} />
 
       <div className="responsive-container mt-4">
         <main>{children}</main>
       </div>
 
-      <footer className="h-20 border-t py-4 mt-4">
+      <footer className="responsive-container h-20 border-t py-4 mt-4">
         <p className="mx-auto text-center">© 2025 alee | All rights reserved</p>
       </footer>
     </div>

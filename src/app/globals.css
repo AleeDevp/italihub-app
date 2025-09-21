@@ -56,8 +56,6 @@
   --shadow-2xl: 0px 3px 0px 0px hsl(330 70% 30% / 0.45);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
-
-  /* CUSTOM DEFINED */
 }
 
 .dark {
