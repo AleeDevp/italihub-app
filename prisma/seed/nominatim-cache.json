@@ -1,0 +1,975 @@
+{
+  "Rome": {
+    "region": "Lazio",
+    "province": "Roma Capitale",
+    "provinceCode": null,
+    "lat": 41.8933203,
+    "lng": 12.4829321
+  },
+  "Milan": {
+    "region": "Lombardia",
+    "province": "Milano",
+    "provinceCode": null,
+    "lat": 45.4641943,
+    "lng": 9.1896346
+  },
+  "Naples": {
+    "region": "Campania",
+    "province": "Napoli",
+    "provinceCode": null,
+    "lat": 40.8358846,
+    "lng": 14.2487679
+  },
+  "Turin": {
+    "region": "Piemonte",
+    "province": "Torino",
+    "provinceCode": null,
+    "lat": 45.0677551,
+    "lng": 7.6824892
+  },
+  "Palermo": {
+    "region": "Sicilia",
+    "province": "Palermo",
+    "provinceCode": null,
+    "lat": 38.1112268,
+    "lng": 13.3524434
+  },
+  "Genoa": {
+    "region": "Liguria",
+    "province": "Genova",
+    "provinceCode": null,
+    "lat": 44.40726,
+    "lng": 8.9338624
+  },
+  "Bologna": {
+    "region": "Emilia-Romagna",
+    "province": "Bologna",
+    "provinceCode": null,
+    "lat": 44.4938203,
+    "lng": 11.3426327
+  },
+  "Florence": {
+    "region": "Toscana",
+    "province": "Firenze",
+    "provinceCode": null,
+    "lat": 43.7697955,
+    "lng": 11.2556404
+  },
+  "Bari": {
+    "region": "Puglia",
+    "province": "Bari",
+    "provinceCode": null,
+    "lat": 41.1257843,
+    "lng": 16.8620293
+  },
+  "Catania": {
+    "region": "Sicilia",
+    "province": "Catania",
+    "provinceCode": null,
+    "lat": 37.5023612,
+    "lng": 15.0873718
+  },
+  "Venice": {
+    "region": "Veneto",
+    "province": "Venezia",
+    "provinceCode": null,
+    "lat": 45.4371908,
+    "lng": 12.3345898
+  },
+  "Verona": {
+    "region": "Veneto",
+    "province": "Verona",
+    "provinceCode": null,
+    "lat": 45.4424977,
+    "lng": 10.9857377
+  },
+  "Messina": {
+    "region": "Sicilia",
+    "province": "Messina",
+    "provinceCode": null,
+    "lat": 38.1937571,
+    "lng": 15.5542082
+  },
+  "Padua": {
+    "region": "Veneto",
+    "province": "Padova",
+    "provinceCode": null,
+    "lat": 45.4077172,
+    "lng": 11.8734455
+  },
+  "Trieste": {
+    "region": "Friuli-Venezia Giulia",
+    "province": "Trieste",
+    "provinceCode": null,
+    "lat": 45.6496485,
+    "lng": 13.7772781
+  },
+  "Taranto": {
+    "region": "Puglia",
+    "province": "Taranto",
+    "provinceCode": null,
+    "lat": 40.5488156,
+    "lng": 17.0805801
+  },
+  "Brescia": {
+    "region": "Lombardia",
+    "province": "Brescia",
+    "provinceCode": null,
+    "lat": 45.7795805,
+    "lng": 10.425873
+  },
+  "Prato": {
+    "region": "Toscana",
+    "province": "Prato",
+    "provinceCode": null,
+    "lat": 43.9357181,
+    "lng": 11.0941473
+  },
+  "Reggio Calabria": {
+    "region": "Calabria",
+    "province": "Reggio Calabria",
+    "provinceCode": null,
+    "lat": 38.1035389,
+    "lng": 15.6397556
+  },
+  "Modena": {
+    "region": "Emilia-Romagna",
+    "province": "Modena",
+    "provinceCode": null,
+    "lat": 44.5384728,
+    "lng": 10.9359609
+  },
+  "Reggio Emilia": {
+    "region": "Emilia-Romagna",
+    "province": "Reggio nell'Emilia",
+    "provinceCode": null,
+    "lat": 44.6086674,
+    "lng": 10.5940667
+  },
+  "Perugia": {
+    "region": "Umbria",
+    "province": "Perugia",
+    "provinceCode": null,
+    "lat": 43.1070321,
+    "lng": 12.4029962
+  },
+  "Ravenna": {
+    "region": "Emilia-Romagna",
+    "province": "Ravenna",
+    "provinceCode": null,
+    "lat": 44.3640607,
+    "lng": 12.0590095
+  },
+  "Livorno": {
+    "region": "Toscana",
+    "province": "Livorno",
+    "provinceCode": null,
+    "lat": 42.7902379,
+    "lng": 10.3402239
+  },
+  "Cagliari": {
+    "region": "Sardigna/Sardegna",
+    "province": "Casteddu/Cagliari",
+    "provinceCode": null,
+    "lat": 39.2171994,
+    "lng": 9.113311
+  },
+  "Foggia": {
+    "region": "Puglia",
+    "province": "Foggia",
+    "provinceCode": null,
+    "lat": 41.5028106,
+    "lng": 15.4528939
+  },
+  "Rimini": {
+    "region": "Emilia-Romagna",
+    "province": "Rimini",
+    "provinceCode": null,
+    "lat": 43.9465433,
+    "lng": 12.630749
+  },
+  "Salerno": {
+    "region": "Campania",
+    "province": "Salerno",
+    "provinceCode": null,
+    "lat": 40.4194417,
+    "lng": 15.3106085
+  },
+  "Ferrara": {
+    "region": "Emilia-Romagna",
+    "province": "Ferrara",
+    "provinceCode": null,
+    "lat": 44.7667642,
+    "lng": 11.827939
+  },
+  "Sassari": {
+    "region": "Sardigna/Sardegna",
+    "province": "Sassari",
+    "provinceCode": null,
+    "lat": 40.7234746,
+    "lng": 8.5612674
+  },
+  "Latina": {
+    "region": "Lazio",
+    "province": "Latina",
+    "provinceCode": null,
+    "lat": 41.4595261,
+    "lng": 13.0125912
+  },
+  "Giugliano in Campania": {
+    "region": "Campania",
+    "province": "Napoli",
+    "provinceCode": null,
+    "lat": 40.9283217,
+    "lng": 14.2011232
+  },
+  "Monza": {
+    "region": "Lombardia",
+    "province": "Monza e della Brianza",
+    "provinceCode": null,
+    "lat": 45.6395418,
+    "lng": 9.2788304
+  },
+  "Siracusa": {
+    "region": "Sicilia",
+    "province": "Siracusa",
+    "provinceCode": null,
+    "lat": 37.0646139,
+    "lng": 15.2907196
+  },
+  "Pescara": {
+    "region": "Abruzzo",
+    "province": "Pescara",
+    "provinceCode": null,
+    "lat": 42.3102619,
+    "lng": 13.9575901
+  },
+  "Bergamo": {
+    "region": "Lombardia",
+    "province": "Bergamo",
+    "provinceCode": null,
+    "lat": 45.7566557,
+    "lng": 9.7542192
+  },
+  "Forlì": {
+    "region": "Emilia-Romagna",
+    "province": "Forlì-Cesena",
+    "provinceCode": null,
+    "lat": 44.2227278,
+    "lng": 12.041273
+  },
+  "Trento": {
+    "region": "Trentino-Alto Adige/Südtirol",
+    "province": "Provincia di Trento",
+    "provinceCode": null,
+    "lat": 46.1029536,
+    "lng": 11.1297425
+  },
+  "Vicenza": {
+    "region": "Veneto",
+    "province": "Vicenza",
+    "provinceCode": null,
+    "lat": 45.6348591,
+    "lng": 11.4063543
+  },
+  "Terni": {
+    "region": "Umbria",
+    "province": "Terni",
+    "provinceCode": null,
+    "lat": 42.6539486,
+    "lng": 12.4396528
+  },
+  "Bolzano": {
+    "region": "Trentino-Alto Adige/Südtirol",
+    "province": "Bolzano - Bozen",
+    "provinceCode": null,
+    "lat": 46.6559455,
+    "lng": 11.2302129
+  },
+  "Novara": {
+    "region": "Piemonte",
+    "province": "Novara",
+    "provinceCode": null,
+    "lat": 45.58425,
+    "lng": 8.545997
+  },
+  "Piacenza": {
+    "region": "Emilia-Romagna",
+    "province": "Piacenza",
+    "provinceCode": null,
+    "lat": 44.8476352,
+    "lng": 9.6665313
+  },
+  "Ancona": {
+    "region": "Marche",
+    "province": "Ancona",
+    "provinceCode": null,
+    "lat": 43.4801189,
+    "lng": 13.2187279
+  },
+  "Lecce": {
+    "region": "Puglia",
+    "province": "Lecce",
+    "provinceCode": null,
+    "lat": 40.1522173,
+    "lng": 18.2260628
+  },
+  "Andria": {
+    "region": "Puglia",
+    "province": "Barletta-Andria-Trani",
+    "provinceCode": null,
+    "lat": 41.2275731,
+    "lng": 16.2954806
+  },
+  "Udine": {
+    "region": "Friuli-Venezia Giulia",
+    "province": "Udine",
+    "provinceCode": null,
+    "lat": 46.0634632,
+    "lng": 13.2358377
+  },
+  "Arezzo": {
+    "region": "Toscana",
+    "province": "Arezzo",
+    "provinceCode": null,
+    "lat": 43.5171442,
+    "lng": 11.7639282
+  },
+  "Cesena": {
+    "region": "Emilia-Romagna",
+    "province": "Forlì-Cesena",
+    "provinceCode": null,
+    "lat": 44.136352,
+    "lng": 12.2422442
+  },
+  "La Spezia": {
+    "region": "Liguria",
+    "province": "La Spezia",
+    "provinceCode": null,
+    "lat": 44.238366,
+    "lng": 9.6912326
+  },
+  "Alessandria": {
+    "region": "Piemonte",
+    "province": "Alessandria",
+    "provinceCode": null,
+    "lat": 44.8349534,
+    "lng": 8.7450304
+  },
+  "Pesaro": {
+    "region": "Marche",
+    "province": "Pesaro e Urbino",
+    "provinceCode": null,
+    "lat": 43.9098114,
+    "lng": 12.9131228
+  },
+  "Barletta": {
+    "region": "Puglia",
+    "province": "Barletta-Andria-Trani",
+    "provinceCode": null,
+    "lat": 41.3214976,
+    "lng": 16.2868696
+  },
+  "Pistoia": {
+    "region": "Toscana",
+    "province": "Pistoia",
+    "provinceCode": null,
+    "lat": 43.9740957,
+    "lng": 10.8687081
+  },
+  "Lucca": {
+    "region": "Toscana",
+    "province": "Lucca",
+    "provinceCode": null,
+    "lat": 44.0177639,
+    "lng": 10.45443
+  },
+  "Catanzaro": {
+    "region": "Calabria",
+    "province": "Catanzaro",
+    "provinceCode": null,
+    "lat": 38.8299603,
+    "lng": 16.4315569
+  },
+  "Brindisi": {
+    "region": "Puglia",
+    "province": "Brindisi",
+    "provinceCode": null,
+    "lat": 40.6358599,
+    "lng": 17.6884975
+  },
+  "Treviso": {
+    "region": "Veneto",
+    "province": "Treviso",
+    "provinceCode": null,
+    "lat": 45.8066913,
+    "lng": 12.2063158
+  },
+  "Guidonia Montecelio": {
+    "region": "Lazio",
+    "province": "Roma Capitale",
+    "provinceCode": null,
+    "lat": 41.9842734,
+    "lng": 12.6953191
+  },
+  "Como": {
+    "region": "Lombardia",
+    "province": "Como",
+    "provinceCode": null,
+    "lat": 45.9394759,
+    "lng": 9.1494101
+  },
+  "Torre del Greco": {
+    "region": "Campania",
+    "province": "Napoli",
+    "provinceCode": null,
+    "lat": 40.7879211,
+    "lng": 14.3682813
+  },
+  "Busto Arsizio": {
+    "region": "Lombardia",
+    "province": "Varese",
+    "provinceCode": null,
+    "lat": 45.611932,
+    "lng": 8.8518269
+  },
+  "Marsala": {
+    "region": "Sicilia",
+    "province": "Trapani",
+    "provinceCode": null,
+    "lat": 37.7979221,
+    "lng": 12.4342091
+  },
+  "Varese": {
+    "region": "Lombardia",
+    "province": "Varese",
+    "provinceCode": null,
+    "lat": 45.8397203,
+    "lng": 8.7541338
+  },
+  "Sesto San Giovanni": {
+    "region": "Lombardia",
+    "province": "Milano",
+    "provinceCode": null,
+    "lat": 45.5357218,
+    "lng": 9.2376549
+  },
+  "Casoria": {
+    "region": "Campania",
+    "province": "Napoli",
+    "provinceCode": null,
+    "lat": 40.9045572,
+    "lng": 14.2901223
+  },
+  "Asti": {
+    "region": "Piemonte",
+    "province": "Asti",
+    "provinceCode": null,
+    "lat": 44.8260126,
+    "lng": 8.2026863
+  },
+  "Cinisello Balsamo": {
+    "region": "Lombardia",
+    "province": "Milano",
+    "provinceCode": null,
+    "lat": 45.5586454,
+    "lng": 9.2141955
+  },
+  "Gela": {
+    "region": "Sicilia",
+    "province": "Caltanissetta",
+    "provinceCode": null,
+    "lat": 37.0664363,
+    "lng": 14.2502445
+  },
+  "Cremona": {
+    "region": "Lombardia",
+    "province": "Cremona",
+    "provinceCode": null,
+    "lat": 45.2208641,
+    "lng": 10.037038
+  },
+  "L’Aquila": {
+    "region": null,
+    "province": "L'Aquila",
+    "provinceCode": null,
+    "lat": 42.1368853,
+    "lng": 13.610341
+  },
+  "Carpi": {
+    "region": "Emilia-Romagna",
+    "province": "Modena",
+    "provinceCode": null,
+    "lat": 44.7835699,
+    "lng": 10.8854523
+  },
+  "Ragusa": {
+    "region": "Sicilia",
+    "province": "Ragusa",
+    "provinceCode": null,
+    "lat": 36.9256833,
+    "lng": 14.7307456
+  },
+  "Trapani": {
+    "region": "Sicilia",
+    "province": "Trapani",
+    "provinceCode": null,
+    "lat": 38.0173961,
+    "lng": 12.5160225
+  },
+  "Pavia": {
+    "region": "Lombardia",
+    "province": "Pavia",
+    "provinceCode": null,
+    "lat": 45.0368546,
+    "lng": 9.1378251
+  },
+  "Altamura": {
+    "region": "Puglia",
+    "province": "Bari",
+    "provinceCode": null,
+    "lat": 40.8543354,
+    "lng": 16.566605
+  },
+  "Massa": {
+    "region": "Toscana",
+    "province": "Massa-Carrara",
+    "provinceCode": null,
+    "lat": 44.0359323,
+    "lng": 10.1395519
+  },
+  "Imola": {
+    "region": "Emilia-Romagna",
+    "province": "Bologna",
+    "provinceCode": null,
+    "lat": 44.3535145,
+    "lng": 11.7141233
+  },
+  "Lamezia Terme": {
+    "region": "Calabria",
+    "province": "Catanzaro",
+    "provinceCode": null,
+    "lat": 38.9645069,
+    "lng": 16.3021451
+  },
+  "Carrara": {
+    "region": "Toscana",
+    "province": "Massa-Carrara",
+    "provinceCode": null,
+    "lat": 44.0771026,
+    "lng": 10.096726
+  },
+  "Cosenza": {
+    "region": "Calabria",
+    "province": "Cosenza",
+    "provinceCode": null,
+    "lat": 39.5966853,
+    "lng": 16.3330556
+  },
+  "Potenza": {
+    "region": "Basilicata",
+    "province": "Potenza",
+    "provinceCode": null,
+    "lat": 40.517312,
+    "lng": 15.8216088
+  },
+  "Castellammare di Stabia": {
+    "region": "Campania",
+    "province": "Napoli",
+    "provinceCode": null,
+    "lat": 40.6943046,
+    "lng": 14.4804813
+  },
+  "Molfetta": {
+    "region": "Puglia",
+    "province": "Bari",
+    "provinceCode": null,
+    "lat": 41.1992456,
+    "lng": 16.5968279
+  },
+  "Viterbo": {
+    "region": "Lazio",
+    "province": "Viterbo",
+    "provinceCode": null,
+    "lat": 42.4929522,
+    "lng": 11.9488136
+  },
+  "Vigevano": {
+    "region": "Lombardia",
+    "province": "Pavia",
+    "provinceCode": null,
+    "lat": 45.3170942,
+    "lng": 8.858603
+  },
+  "Rozzano": {
+    "region": "Lombardia",
+    "province": "Milano",
+    "provinceCode": null,
+    "lat": 45.3829973,
+    "lng": 9.1545305
+  },
+  "Afragola": {
+    "region": "Campania",
+    "province": "Napoli",
+    "provinceCode": null,
+    "lat": 40.926012,
+    "lng": 14.310831
+  },
+  "Quartu Sant'Elena": {
+    "region": "Sardigna/Sardegna",
+    "province": "Casteddu/Cagliari",
+    "provinceCode": null,
+    "lat": 39.2399728,
+    "lng": 9.1880967
+  },
+  "Scandicci": {
+    "region": "Toscana",
+    "province": "Firenze",
+    "provinceCode": null,
+    "lat": 43.7567104,
+    "lng": 11.1847619
+  },
+  "Collegno": {
+    "region": "Piemonte",
+    "province": "Torino",
+    "provinceCode": null,
+    "lat": 45.0775473,
+    "lng": 7.5724262
+  },
+  "Vercelli": {
+    "region": "Piemonte",
+    "province": "Vercelli",
+    "provinceCode": null,
+    "lat": 45.5553827,
+    "lng": 8.3462837
+  },
+  "Civitavecchia": {
+    "region": "Lazio",
+    "province": "Roma Capitale",
+    "provinceCode": null,
+    "lat": 42.0937524,
+    "lng": 11.7922462
+  },
+  "Cerignola": {
+    "region": "Puglia",
+    "province": "Foggia",
+    "provinceCode": null,
+    "lat": 41.2648121,
+    "lng": 15.8996651
+  },
+  "Bitonto": {
+    "region": "Puglia",
+    "province": "Bari",
+    "provinceCode": null,
+    "lat": 41.1084971,
+    "lng": 16.691548
+  },
+  "Savona": {
+    "region": "Liguria",
+    "province": "Savona",
+    "provinceCode": null,
+    "lat": 44.2334238,
+    "lng": 8.2525727
+  },
+  "Avellino": {
+    "region": "Campania",
+    "province": "Avellino",
+    "provinceCode": null,
+    "lat": 40.9965446,
+    "lng": 15.140569
+  },
+  "Ercolano": {
+    "region": "Campania",
+    "province": "Napoli",
+    "provinceCode": null,
+    "lat": 40.8053613,
+    "lng": 14.3471036
+  },
+  "Rho": {
+    "region": "Lombardia",
+    "province": "Milano",
+    "provinceCode": null,
+    "lat": 45.528878,
+    "lng": 9.04156
+  },
+  "Caltanissetta": {
+    "region": "Sicilia",
+    "province": "Caltanissetta",
+    "provinceCode": null,
+    "lat": 37.4902628,
+    "lng": 14.063284
+  },
+  "Caserta": {
+    "region": "Campania",
+    "province": "Caserta",
+    "provinceCode": null,
+    "lat": 41.2035193,
+    "lng": 14.1168624
+  },
+  "Benevento": {
+    "region": "Campania",
+    "province": "Benevento",
+    "provinceCode": null,
+    "lat": 41.2476307,
+    "lng": 14.7057054
+  },
+  "Matera": {
+    "region": "Basilicata",
+    "province": "Matera",
+    "provinceCode": null,
+    "lat": 40.4476419,
+    "lng": 16.4735738
+  },
+  "Crotone": {
+    "region": "Calabria",
+    "province": "Crotone",
+    "provinceCode": null,
+    "lat": 39.1873894,
+    "lng": 16.8782819
+  },
+  "Vibo Valentia": {
+    "region": "Calabria",
+    "province": "Vibo Valentia",
+    "provinceCode": null,
+    "lat": 38.6266556,
+    "lng": 16.0986935
+  },
+  "Enna": {
+    "region": "Sicilia",
+    "province": "Enna",
+    "provinceCode": null,
+    "lat": 37.5667573,
+    "lng": 14.2807473
+  },
+  "Mazara del Vallo": {
+    "region": "Sicilia",
+    "province": "Trapani",
+    "provinceCode": null,
+    "lat": 37.6537292,
+    "lng": 12.5886912
+  },
+  "Agrigento": {
+    "region": "Sicilia",
+    "province": "Agrigento",
+    "provinceCode": null,
+    "lat": 37.3122991,
+    "lng": 13.57465
+  },
+  "Alcamo": {
+    "region": "Sicilia",
+    "province": "Trapani",
+    "provinceCode": null,
+    "lat": 37.9766497,
+    "lng": 12.9626735
+  },
+  "Favara": {
+    "region": "Sicilia",
+    "province": "Agrigento",
+    "provinceCode": null,
+    "lat": 37.3161967,
+    "lng": 13.6624175
+  },
+  "Oristano": {
+    "region": "Sardigna/Sardegna",
+    "province": "Aristanis/Oristano",
+    "provinceCode": null,
+    "lat": 40.0265677,
+    "lng": 8.6796416
+  },
+  "Iglesias": {
+    "region": "Sardigna/Sardegna",
+    "province": "Sulcis Iglesiente",
+    "provinceCode": null,
+    "lat": 39.3125402,
+    "lng": 8.5341109
+  },
+  "Nuoro": {
+    "region": "Sardigna/Sardegna",
+    "province": "Nuoro",
+    "provinceCode": null,
+    "lat": 40.2640891,
+    "lng": 9.1272041
+  },
+  "Olbia": {
+    "region": "Sardigna/Sardegna",
+    "province": "Gallura Nord-Est Sardegna",
+    "provinceCode": null,
+    "lat": 40.9232659,
+    "lng": 9.5027442
+  },
+  "Legnano": {
+    "region": "Lombardia",
+    "province": "Milano",
+    "provinceCode": null,
+    "lat": 45.5946464,
+    "lng": 8.9181625
+  },
+  "Lodi": {
+    "region": "Lombardia",
+    "province": "Lodi",
+    "provinceCode": null,
+    "lat": 45.2613104,
+    "lng": 9.4916781
+  },
+  "Lecco": {
+    "region": "Lombardia",
+    "province": "Lecco",
+    "provinceCode": null,
+    "lat": 45.9005485,
+    "lng": 9.4120248
+  },
+  "La Maddalena": {
+    "region": "Sardigna/Sardegna",
+    "province": "Gallura Nord-Est Sardegna",
+    "provinceCode": null,
+    "lat": 41.2128379,
+    "lng": 9.4054906
+  },
+  "Viareggio": {
+    "region": "Toscana",
+    "province": "Lucca",
+    "provinceCode": null,
+    "lat": 43.8672392,
+    "lng": 10.2506055
+  },
+  "Siena": {
+    "region": "Toscana",
+    "province": "Siena",
+    "provinceCode": null,
+    "lat": 43.167206,
+    "lng": 11.467561
+  },
+  "Pisa": {
+    "region": "Toscana",
+    "province": "Pisa",
+    "provinceCode": null,
+    "lat": 43.4714722,
+    "lng": 10.6797912
+  },
+  "Cortona": {
+    "region": "Toscana",
+    "province": "Arezzo",
+    "provinceCode": null,
+    "lat": 43.2752976,
+    "lng": 11.9850623
+  },
+  "Cassino": {
+    "region": "Lazio",
+    "province": "Frosinone",
+    "provinceCode": null,
+    "lat": 41.4925576,
+    "lng": 13.8305297
+  },
+  "Belluno": {
+    "region": "Veneto",
+    "province": "Belluno",
+    "provinceCode": null,
+    "lat": 46.2805407,
+    "lng": 12.0789137
+  },
+  "Sondrio": {
+    "region": "Lombardia",
+    "province": "Sondrio",
+    "provinceCode": null,
+    "lat": 46.3233624,
+    "lng": 10.2584137
+  },
+  "Gorizia": {
+    "region": "Friuli-Venezia Giulia",
+    "province": "Gorizia",
+    "provinceCode": null,
+    "lat": 45.9441278,
+    "lng": 13.6252288
+  },
+  "Verbania": {
+    "region": "Piemonte",
+    "province": "Verbano-Cusio-Ossola",
+    "provinceCode": null,
+    "lat": 45.9344082,
+    "lng": 8.5580062
+  },
+  "Rieti": {
+    "region": "Lazio",
+    "province": "Rieti",
+    "provinceCode": null,
+    "lat": 42.4147363,
+    "lng": 12.8858881
+  },
+  "Isernia": {
+    "region": "Molise",
+    "province": "Isernia",
+    "provinceCode": null,
+    "lat": 41.6495092,
+    "lng": 14.2080618
+  },
+  "Chioggia": {
+    "region": "Veneto",
+    "province": "Venezia",
+    "provinceCode": null,
+    "lat": 45.218894,
+    "lng": 12.2785805
+  },
+  "Martina Franca": {
+    "region": "Puglia",
+    "province": "Taranto",
+    "provinceCode": null,
+    "lat": 40.7042378,
+    "lng": 17.3399908
+  },
+  "Fano": {
+    "region": null,
+    "province": "Pesaro e Urbino",
+    "provinceCode": null,
+    "lat": 43.8424173,
+    "lng": 13.0146632
+  },
+  "Senigallia": {
+    "region": "Marche",
+    "province": "Ancona",
+    "provinceCode": null,
+    "lat": 43.7149517,
+    "lng": 13.2179488
+  },
+  "Vittoria": {
+    "region": "Sicilia",
+    "province": "Ragusa",
+    "provinceCode": null,
+    "lat": 36.9514957,
+    "lng": 14.5304867
+  },
+  "Bagheria": {
+    "region": "Sicilia",
+    "province": "Palermo",
+    "provinceCode": null,
+    "lat": 38.079351,
+    "lng": 13.509349
+  },
+  "Cava de' Tirreni": {
+    "region": "Campania",
+    "province": "Salerno",
+    "provinceCode": null,
+    "lat": 40.7004616,
+    "lng": 14.7062633
+  },
+  "Manfredonia": {
+    "region": "Puglia",
+    "province": "Foggia",
+    "provinceCode": null,
+    "lat": 41.6254728,
+    "lng": 15.9095926
+  },
+  "Sanremo": {
+    "region": "Liguria",
+    "province": "Provincia di Imperia",
+    "provinceCode": null,
+    "lat": 43.8198253,
+    "lng": 7.7748827
+  },
+  "Aversa": {
+    "region": "Campania",
+    "province": "Caserta",
+    "provinceCode": null,
+    "lat": 40.973212,
+    "lng": 14.204928
+  }
+}

@@ -1,15 +1,17 @@
 'use server';
 
-import { getServerSession } from '@/lib/get-session';
+import { requireUser } from '@/lib/auth';
 import { forbidden, unauthorized } from 'next/navigation';
 import { setTimeout } from 'node:timers/promises';
 // Example admin action
 export async function deleteApplication() {
-  const session = await getServerSession();
-  const user = session?.user;
-
-  if (!user) unauthorized();
-  if (user.role !== 'admin') forbidden();
+  let user;
+  try {
+    user = await requireUser();
+  } catch {
+    unauthorized();
+  }
+  if (user!.role !== 'admin') forbidden();
 
   // Proceed with deleting the application
   console.log('Deleting application...');

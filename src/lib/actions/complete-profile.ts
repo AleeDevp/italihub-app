@@ -1,0 +1,97 @@
+'use server';
+
+import {
+  deleteCloudinaryByStorageKey,
+  uploadImageToCloudinary,
+} from '@/lib/actions/uploud-image-cloudinary';
+import { requireUser } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { CompleteProfileSchema } from '@/lib/schemas/complete-profile-schema';
+import { z } from 'zod';
+
+// Contract
+// Inputs: values matching CompleteProfileSchema + optional File (profilePic)
+// Output: { ok: true, data: { userId } } | { ok: false, error: string }
+
+const ActionInput = CompleteProfileSchema.extend({
+  // profilePic already nullable any in schema; keep type at runtime via FormData/File check
+});
+
+export type CompleteProfileInput = z.infer<typeof ActionInput>;
+
+export type CompleteProfileResult =
+  | { ok: true; data: { id: string } }
+  | { ok: false; error: string };
+
+export async function completeProfileAction(formData: FormData): Promise<CompleteProfileResult> {
+  try {
+    const user = await requireUser();
+
+    // Extract values from FormData
+    const raw = {
+      name: formData.get('name') as string,
+      username: formData.get('username') as string,
+      city: formData.get('city') as string,
+      confirmed: formData.get('confirmed') === 'true' || formData.get('confirmed') === 'on',
+      telegram: (formData.get('telegram') as string) || '',
+      // profilePic is a File or null
+      profilePic: (formData.get('profilePic') as unknown as File) ?? null,
+    };
+
+    // Validate with Zod
+    const parsed = ActionInput.safeParse(raw);
+    if (!parsed.success) {
+      const msg = parsed.error.issues?.[0]?.message ?? 'Validation failed';
+      return { ok: false, error: msg };
+    }
+    const values = parsed.data;
+
+    // Resolve cityId from city name (ensure exists)
+    const city = await prisma.city.findFirst({ where: { name: values.city } });
+    if (!city) {
+      return { ok: false, error: 'Selected city is not valid.' };
+    }
+
+    // Optional image upload first (so we can include its key when updating)
+    let newImageKey: string | null = null;
+    if (values.profilePic && typeof (values.profilePic as any).arrayBuffer === 'function') {
+      try {
+        const uploaded = await uploadImageToCloudinary(values.profilePic as File, user.id);
+        newImageKey = uploaded.storageKey;
+      } catch (e: any) {
+        return { ok: false, error: e?.message || 'Failed to upload image' };
+      }
+    }
+
+    // Apply DB updates in a transaction. If it fails, try to rollback the new cloud asset.
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: user.id },
+          data: {
+            name: values.name,
+            // username maps to userId column (unique citext)
+            userId: values.username,
+            telegramHandle: values.telegram || null,
+            image: newImageKey ?? undefined, // leave unchanged if null and not provided
+            cityId: city.id,
+            cityLastChangedAt: new Date(),
+            isProfileComplete: true,
+          },
+        });
+      });
+    } catch (e: any) {
+      // Compensation: remove the just-uploaded image if DB write failed
+      if (newImageKey) {
+        await deleteCloudinaryByStorageKey(newImageKey).catch(() => {});
+      }
+      const msg = e?.message || 'Failed to update profile';
+      return { ok: false, error: msg };
+    }
+
+    return { ok: true, data: { id: user.id } };
+  } catch (e: any) {
+    const msg = e?.message || 'Unexpected server error';
+    return { ok: false, error: msg };
+  }
+}

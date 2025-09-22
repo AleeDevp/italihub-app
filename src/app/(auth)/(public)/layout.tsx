@@ -1,4 +1,4 @@
-import { getServerSession } from '@/lib/get-session';
+import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 export default async function AuthLayout({
@@ -6,8 +6,8 @@ export default async function AuthLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession();
-  if (session) {
+  const user = await getCurrentUser();
+  if (user) {
     // You can also redirect to a login page or show an error
     redirect('/dashboard');
   }

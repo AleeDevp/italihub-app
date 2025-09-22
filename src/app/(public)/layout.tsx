@@ -9,7 +9,7 @@ export default async function PublicLayout({
   const session = await getServerSession();
 
   return (
-    <div className="flex flex-col h-dvh bg-white">
+    <div className="flex flex-col h-dvh ">
       <Header session={session ?? null} />
 
       <div className="responsive-container mt-4">

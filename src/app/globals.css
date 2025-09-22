@@ -10,15 +10,15 @@
 /* @custom-variant dark (&:is(.dark *)); */
 
 :root {
-  --background: oklch(0.9692 0.0192 343.9344);
+  --background: oklch(98.564% 0.00913 341.133);
   --foreground: oklch(0.4426 0.1653 352.3762);
-  --card: oklch(0.9837 0.0107 339.3288);
+  --card: oklch(100% 0.00011 271.152);
   --card-foreground: oklch(0.4426 0.1653 352.3762);
   --popover: oklch(0.9837 0.0107 339.3288);
   --popover-foreground: oklch(0.4426 0.1653 352.3762);
   --primary: oklch(0.6002 0.2414 0.1348);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.923 0.0701 326.1273);
+  --secondary: oklch(91.525% 0.05004 352.568);
   --secondary-foreground: oklch(0.4426 0.1653 352.3762);
   --muted: oklch(0.9429 0.0363 344.2604);
   --muted-foreground: oklch(0.574 0.1732 352.0544);
@@ -26,7 +26,7 @@
   --accent-foreground: oklch(0.4426 0.1653 352.3762);
   --destructive: oklch(0.5831 0.1911 6.341);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.8881 0.0747 344.3866);
+  --border: oklch(100% 0.00011 271.152);
   --input: oklch(0.923 0.0701 326.1273);
   --ring: oklch(0.6002 0.2414 0.1348);
   --chart-1: oklch(0.6002 0.2414 0.1348);
@@ -185,10 +185,11 @@ body {
 }
 
 .home-header {
-  @apply rounded-2xl p-6 bg-popover flex items-center justify-between px-4 shadow-2xl;
+  @apply bg-white;
+  @apply rounded-2xl py-6 px-2 flex items-center justify-between shadow;
   @apply md:max-w-[800px];
-  @apply border-1;
-  height: 4rem;
+  @apply border-2 border-neutral-100;
+  @apply h-14;
   width: calc(7 / 8 * 100%);
   z-index: 50; /* z-50 */
 }

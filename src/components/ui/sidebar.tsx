@@ -1,7 +1,7 @@
 'use client';
 
 import { cva, VariantProps } from 'class-variance-authority';
-import { PanelLeftIcon } from 'lucide-react';
+import { PanelRightClose } from 'lucide-react';
 import { type Transition } from 'motion/react';
 import { Slot } from 'radix-ui';
 import * as React from 'react';
@@ -295,7 +295,7 @@ function SidebarTrigger({ className, onClick, ...props }: SidebarTriggerProps) {
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      <PanelRightClose />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

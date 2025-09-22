@@ -1,14 +1,17 @@
-import { getServerSession } from '@/lib/get-session';
+import { requireUser } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { forbidden, unauthorized } from 'next/navigation';
 import { ReactNode } from 'react';
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
-  const session = await getServerSession();
-  const user = session?.user;
-  if (!user) unauthorized();
+  let user;
+  try {
+    user = await requireUser();
+  } catch {
+    unauthorized();
+  }
 
-  if (user.role !== 'admin') forbidden();
+  if (user!.role !== 'admin') forbidden();
 
   return (
     <div className={cn('min-h-screen ')}>

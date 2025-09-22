@@ -9,3 +9,5 @@ export const getServerSession = cache(async () => {
     headers: await headers(),
   });
 });
+
+// TODO: Delete this, There is already requireUser in require-user.ts for getting user data

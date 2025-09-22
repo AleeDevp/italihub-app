@@ -1,4 +1,3 @@
-import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import type { Metadata, Viewport } from 'next';
 
@@ -35,15 +34,15 @@ export default async function RootLayout({
   return (
     <html lang="en" className={fredoka.variable} suppressHydrationWarning>
       <body className={`${fredoka.className} antialiased`}>
-        <ThemeProvider
+        {/* <ThemeProvider
           attribute="class"
           defaultTheme="light"
           enableSystem
           disableTransitionOnChange
-        >
-          {children}
-          <Toaster />
-        </ThemeProvider>
+        > */}
+        {children}
+        <Toaster />
+        {/* </ThemeProvider> */}
       </body>
     </html>
   );

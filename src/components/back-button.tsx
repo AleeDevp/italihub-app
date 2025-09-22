@@ -7,7 +7,7 @@ export function BackButton() {
   const router = useRouter();
 
   return (
-    <Button variant="link" className="mb-2" onClick={() => router.back()}>
+    <Button variant="link" className="mb-2 mt-2" onClick={() => router.back()}>
       ← Back
     </Button>
   );
