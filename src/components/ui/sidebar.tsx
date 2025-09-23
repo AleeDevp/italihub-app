@@ -1,7 +1,7 @@
 'use client';
 
 import { cva, VariantProps } from 'class-variance-authority';
-import { PanelRightClose } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { type Transition } from 'motion/react';
 import { Slot } from 'radix-ui';
 import * as React from 'react';
@@ -78,6 +78,29 @@ function SidebarProvider({
     },
     [setOpenProp, open]
   );
+
+  // On mount, read the cookie and restore the sidebar state so it persists across refreshes.
+  React.useEffect(() => {
+    try {
+      const cookiePair = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith(`${SIDEBAR_COOKIE_NAME}=`));
+      if (cookiePair) {
+        const value = cookiePair.split('=')[1];
+        const cookieOpen = value === 'true';
+        // If uncontrolled, update internal state directly to avoid rewriting the cookie.
+        if (openProp === undefined) {
+          _setOpen(cookieOpen);
+        } else {
+          setOpenProp?.(cookieOpen);
+        }
+      }
+    } catch {
+      // no-op: if cookies are unavailable, we keep defaultOpen
+    }
+    // We intentionally run this only once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
@@ -280,7 +303,7 @@ function Sidebar({
 type SidebarTriggerProps = React.ComponentProps<typeof Button>;
 
 function SidebarTrigger({ className, onClick, ...props }: SidebarTriggerProps) {
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, state } = useSidebar();
 
   return (
     <Button
@@ -295,7 +318,8 @@ function SidebarTrigger({ className, onClick, ...props }: SidebarTriggerProps) {
       }}
       {...props}
     >
-      <PanelRightClose />
+      {state === 'collapsed' ? <PanelLeftOpen /> : <PanelLeftClose />}
+
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

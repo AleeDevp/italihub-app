@@ -58,7 +58,7 @@ export function Header({ session }: HeaderProps) {
             <Button
               asChild
               variant="secondary"
-              className="h-full shadow-sm rounded-full border-2  text-sm font-medium text-white
+              className="h-full shadow-sm rounded-full border-1  text-sm font-medium text-white
               bg-radial-[at_25%_25%] from-secondary to-primary/90 to-75%
               "
             >

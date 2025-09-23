@@ -2,7 +2,6 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardDescription } from '@/components/ui/card';
-import Image from 'next/image';
 
 export default function HomePage() {
   const categories = [
@@ -115,7 +114,7 @@ type CategoryCardProps = {
 function CategoryCard({ image, title, description, badge, color, className }: CategoryCardProps) {
   return (
     <Card
-      className={`z-10 flex relative group px-4 pb-4 overflow-hidden hover:shadow-3xl transition-shadow duration-500 ${className ?? ''}`}
+      className={`z-10 flex relative group border-0 px-4 pb-4 overflow-hidden hover:shadow-3xl transition-shadow duration-500 ${className ?? ''}`}
     >
       {/* Floating Badge */}
       <div className="absolute top-3 right-3">
@@ -134,7 +133,7 @@ function CategoryCard({ image, title, description, badge, color, className }: Ca
           </CardDescription>
         </div>
       </div>
-      <Image src={image} alt={title} fill className="object-cover object-[50%_65%] -z-10" />
+      {/* <Image src={image} alt={title} fill className="object-cover object-[50%_65%] -z-10" /> */}
       {/* 50% x-axis, 30% y-axis */}
       {/* White gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-white/100 via-white/30  to-transparent -z-10" />
