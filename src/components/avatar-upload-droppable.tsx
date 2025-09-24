@@ -27,7 +27,7 @@ export default function AvatarUploadDroppable(props: AvatarUploadDroppableProps)
       handleDrop,
     },
   ] = useFileUpload({
-    accept: 'image/*',
+    accept: 'image/jpeg,image/png,image/webp,image/avif',
     onFilesAdded: props.onFilesAdded,
   });
 

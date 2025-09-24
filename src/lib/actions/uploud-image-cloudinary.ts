@@ -43,11 +43,15 @@ function uploadBufferToCloudinary(buf: Buffer, publicId: string) {
 export async function uploadImageToCloudinary(file: File, userId: string): Promise<UploadResult> {
   try {
     if (!file) throw new Error('No file provided');
-    if (!(file as any).type || !file.type.startsWith('image/')) {
-      throw new Error('Invalid file type');
-    }
-    const maxBytes = 4 * 1024 * 1024; // 4 MB
-    if (file.size > maxBytes) throw new Error('File too large');
+    const type = (file as any).type as string | undefined;
+    if (!type) throw new Error('Invalid file');
+    // Allowlist of MIME types; explicitly reject GIF/animated formats
+    const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
+    if (type === 'image/gif') throw new Error('Animated GIFs are not allowed');
+    if (!ALLOWED.has(type)) throw new Error('Unsupported image format');
+
+    const maxBytes = 6 * 1024 * 1024; // 6 MB cap
+    if (file.size > maxBytes) throw new Error('File too large (max 6 MB)');
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);

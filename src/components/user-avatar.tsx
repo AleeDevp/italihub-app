@@ -33,6 +33,7 @@ function resolveImageUrl(image?: string | null, size?: number): string | null {
   const cloud = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   if (!cloud) return null;
   const base = `https://res.cloudinary.com/${cloud}/image/upload`;
-  const t = `f_auto,q_auto${size ? `,w_${size}` : ''}`;
+  // dpr_auto for HiDPI, fl_strip_profile strips EXIF/ICC metadata, f_auto/q_auto for optimal delivery
+  const t = `dpr_auto,f_auto,q_auto,fl_strip_profile${size ? `,w_${size}` : ''}`;
   return `${base}/${t}/${image}`;
 }

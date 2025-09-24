@@ -7,12 +7,13 @@ import './globals.css';
 
 // Define the Fredoka font (variable font support is automatic)
 const fredoka = localFont({
-  src: './fonts/Fredoka-VariableFont_wdth,wght.ttf',
+  src: '../../public/fonts/Fredoka-VariableFont_wdth,wght.ttf',
   display: 'swap', // Prevents invisible text during load
   variable: '--font-fredoka', // Creates a CSS variable for Tailwind
   weight: '300 700', // Fredoka's variable range ( covers light to black)
   style: 'normal',
   fallback: ['system-ui', 'sans-serif'], // Graceful fallback
+  preload: false, // Opt-in to font preloading
 });
 
 export const metadata: Metadata = {

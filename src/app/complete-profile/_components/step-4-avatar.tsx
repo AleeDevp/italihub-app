@@ -11,6 +11,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -99,91 +100,101 @@ export function Step4Avatar({ form, onBack, onSubmit }: StepProps) {
 
   return (
     <>
-      <div className="space-y-4 h-[450px]">
-        <FormField
-          control={form.control}
-          name="profilePic"
-          render={() => (
-            <FormItem>
-              <FormLabel className="place-self-center">Profile picture</FormLabel>
-              <FormDescription className="text-center">
-                Choose your profile picture.
-              </FormDescription>
-              <div className="flex flex-col items-center gap-2 mt-3">
-                <AvatarUploadDroppable
-                  previewUrl={previewUrl}
-                  onFilesAdded={handleFilesAdded as any}
-                  onRemoveImage={handleRemoveImage}
-                />
-                <div className="tex-accent text-center text-[10px] leading-3">
-                  Click to upload <br /> Drag & drop supported
+      <div className="flex flex-col justify-between h-full p-8">
+        <div className="space-y-6">
+          <FormField
+            control={form.control}
+            name="profilePic"
+            render={() => (
+              <FormItem>
+                <FormLabel className="place-self-center">Profile picture</FormLabel>
+                <FormDescription className="text-center">
+                  Choose your profile picture.
+                </FormDescription>
+                <div className="flex flex-col items-center gap-2 mt-3">
+                  <AvatarUploadDroppable
+                    previewUrl={previewUrl}
+                    onFilesAdded={handleFilesAdded as any}
+                    onRemoveImage={handleRemoveImage}
+                  />
+                  <div className="tex-accent text-center text-[10px] leading-3">
+                    Click to upload <br /> Drag & drop supported
+                  </div>
                 </div>
-              </div>
 
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="sm:max-w-xl p-2">
-            <DialogHeader>
-              <DialogTitle className="text-md font-semibold">Crop your profile picture</DialogTitle>
-            </DialogHeader>
-            {selectedImageUrl && (
-              <Cropper
-                className="h-80"
-                image={selectedImageUrl}
-                aspectRatio={1}
-                onCropChange={(a) => {
-                  const area = a as Area | null;
-                  if (!area) {
-                    cropAreaRef.current = null;
-                    return;
-                  }
-                  const prev = cropAreaRef.current;
-                  if (
-                    prev &&
-                    prev.x === area.x &&
-                    prev.y === area.y &&
-                    prev.width === area.width &&
-                    prev.height === area.height
-                  ) {
-                    return;
-                  }
-                  cropAreaRef.current = area;
-                }}
-              >
-                <CropperDescription />
-                <CropperImage />
-                <CropperCropArea className="rounded-full" />
-              </Cropper>
+                <FormMessage />
+              </FormItem>
             )}
-            <DialogFooter>
-              <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="button" onClick={onCropConfirm}>
-                Done
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-      <div className="flex justify-between mb-0">
-        <Button type="button" variant="secondary" onClick={onBack}>
-          Back
-        </Button>
-        <Button type="button" onClick={onSubmit} disabled={!isValid}>
-          Done ✔
-        </Button>
+          />
+
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogContent className="sm:max-w-xl p-2">
+              <DialogHeader>
+                <DialogTitle className="text-md font-semibold">
+                  Crop your profile picture
+                </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Adjust and confirm the crop area to set your profile picture. Use mouse or touch
+                  to move and resize the square crop region.
+                </DialogDescription>
+              </DialogHeader>
+              {selectedImageUrl && (
+                <Cropper
+                  className="h-80"
+                  image={selectedImageUrl}
+                  aspectRatio={1}
+                  onCropChange={(a) => {
+                    const area = a as Area | null;
+                    if (!area) {
+                      cropAreaRef.current = null;
+                      return;
+                    }
+                    const prev = cropAreaRef.current;
+                    if (
+                      prev &&
+                      prev.x === area.x &&
+                      prev.y === area.y &&
+                      prev.width === area.width &&
+                      prev.height === area.height
+                    ) {
+                      return;
+                    }
+                    cropAreaRef.current = area;
+                  }}
+                >
+                  <CropperDescription />
+                  <CropperImage />
+                  <CropperCropArea className="rounded-full" />
+                </Cropper>
+              )}
+              <DialogFooter>
+                <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={onCropConfirm} disabled={!isValid}>
+                  Done
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+        <div className="flex justify-between mb-0">
+          <Button type="button" variant="secondary" onClick={onBack}>
+            Back
+          </Button>
+          <Button type="button" onClick={onSubmit} disabled={!isValid}>
+            Done ✔
+          </Button>
+        </div>
       </div>
       <Img
         src="/complete-profile/boys-img.png"
         alt="Girl Greeting"
-        width={380}
-        height={380}
-        className="absolute -bottom-15 left-1/2 transform -translate-x-1/2 -z-50"
+        height={400}
+        width={400}
+        priority={true}
+        draggable={false}
+        className="absolute object-contain h-95 w-auto -bottom-15 left-1/2 transform -translate-x-1/2 -z-50"
       />
     </>
   );

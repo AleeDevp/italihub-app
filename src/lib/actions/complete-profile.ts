@@ -5,6 +5,7 @@ import {
   uploadImageToCloudinary,
 } from '@/lib/actions/uploud-image-cloudinary';
 import { requireUser } from '@/lib/auth';
+import { isUserIdAvailable } from '@/lib/dal/user';
 import { prisma } from '@/lib/db';
 import { CompleteProfileSchema } from '@/lib/schemas/complete-profile-schema';
 import { z } from 'zod';
@@ -30,7 +31,7 @@ export async function completeProfileAction(formData: FormData): Promise<Complet
     // Extract values from FormData
     const raw = {
       name: formData.get('name') as string,
-      username: formData.get('username') as string,
+      userId: formData.get('userId') as string,
       city: formData.get('city') as string,
       confirmed: formData.get('confirmed') === 'true' || formData.get('confirmed') === 'on',
       telegram: (formData.get('telegram') as string) || '',
@@ -45,6 +46,24 @@ export async function completeProfileAction(formData: FormData): Promise<Complet
       return { ok: false, error: msg };
     }
     const values = parsed.data;
+
+    // Final server-side userId availability check (prevent race conditions)
+    const availabilityCheck = await isUserIdAvailable(values.userId, user.userId || undefined);
+    if (!availabilityCheck.available) {
+      let errorMsg = 'User ID is not available.';
+      switch (availabilityCheck.reason) {
+        case 'invalid':
+          errorMsg = 'Invalid User ID format.';
+          break;
+        case 'reserved':
+          errorMsg = 'This User ID is reserved and cannot be used.';
+          break;
+        case 'taken':
+          errorMsg = 'This User ID is already taken.';
+          break;
+      }
+      return { ok: false, error: errorMsg };
+    }
 
     // Resolve cityId from city name (ensure exists)
     const city = await prisma.city.findFirst({ where: { name: values.city } });
@@ -70,8 +89,8 @@ export async function completeProfileAction(formData: FormData): Promise<Complet
           where: { id: user.id },
           data: {
             name: values.name,
-            // username maps to userId column (unique citext)
-            userId: values.username,
+            // userId maps to userId column (unique citext)
+            userId: values.userId,
             telegramHandle: values.telegram || null,
             image: newImageKey ?? undefined, // leave unchanged if null and not provided
             cityId: city.id,
@@ -85,6 +104,12 @@ export async function completeProfileAction(formData: FormData): Promise<Complet
       if (newImageKey) {
         await deleteCloudinaryByStorageKey(newImageKey).catch(() => {});
       }
+
+      // Check if it's a unique constraint violation on userId
+      if (e.code === 'P2002' && e.meta?.target?.includes('userId')) {
+        return { ok: false, error: 'This User ID is already taken.' };
+      }
+
       const msg = e?.message || 'Failed to update profile';
       return { ok: false, error: msg };
     }

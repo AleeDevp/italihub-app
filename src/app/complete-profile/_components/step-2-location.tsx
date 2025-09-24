@@ -48,96 +48,100 @@ export function Step2Location({ form, onNext, onBack }: StepProps) {
 
   return (
     <>
-      <div className="space-y-6 h-[500px]">
-        <FormField
-          control={form.control}
-          name="city"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>City</FormLabel>
-              <FormDescription>Select the city you're living in.</FormDescription>
+      <div className="flex flex-col justify-between h-full p-8">
+        <div className="space-y-2 ">
+          <FormField
+            control={form.control}
+            name="city"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>City</FormLabel>
+                <FormDescription>Select the city you're living in.</FormDescription>
 
-              <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={open}
-                    className="w-full justify-between"
-                  >
-                    {field.value ? field.value : 'Select city'}
-                    <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                  <Command>
-                    <CommandInput placeholder="Search city..." />
-                    <CommandEmpty>No city found.</CommandEmpty>
-                    <CommandList>
-                      <CommandGroup>
-                        {italianCities.map((c) => (
-                          <CommandItem
-                            key={c.id}
-                            value={c.name}
-                            onSelect={(val) => {
-                              field.onChange(val);
-                              setOpen(false);
-                            }}
-                          >
-                            <CheckIcon
-                              className={cn(
-                                'mr-2 h-4 w-4',
-                                field.value === c ? 'opacity-100' : 'opacity-0'
-                              )}
-                            />
-                            {c.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <Popover open={open} onOpenChange={setOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={open}
+                      className="w-full justify-between"
+                    >
+                      {field.value ? field.value : 'Select city'}
+                      <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search city..." />
+                      <CommandEmpty>No city found.</CommandEmpty>
+                      <CommandList>
+                        <CommandGroup>
+                          {italianCities.map((c) => (
+                            <CommandItem
+                              key={c.id}
+                              value={c.name}
+                              onSelect={(val) => {
+                                field.onChange(val);
+                                setOpen(false);
+                              }}
+                            >
+                              <CheckIcon
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  field.value === c ? 'opacity-100' : 'opacity-0'
+                                )}
+                              />
+                              {c.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="confirmed"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={!!field.value}
-                  onCheckedChange={(v) => field.onChange(Boolean(v))}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>I confirm the provided information is correct.</FormLabel>
-                {/* <FormDescription>You must confirm to continue.</FormDescription> */}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-      <div className="flex justify-between mb-0">
-        <Button type="button" variant="secondary" onClick={onBack}>
-          Back
-        </Button>
-        <Button type="button" onClick={handleNext} disabled={!isValid}>
-          Next
-        </Button>
+          <FormField
+            control={form.control}
+            name="confirmed"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 bg-card rounded-md border p-4 ">
+                <FormControl>
+                  <Checkbox
+                    checked={!!field.value}
+                    onCheckedChange={(v) => field.onChange(Boolean(v))}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>I confirm the provided information is correct.</FormLabel>
+                  {/* <FormDescription>You must confirm to continue.</FormDescription> */}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="flex justify-between mb-0">
+          <Button type="button" variant="secondary" onClick={onBack}>
+            Back
+          </Button>
+          <Button type="button" onClick={handleNext} disabled={!isValid}>
+            Next
+          </Button>
+        </div>
       </div>
       <Image
         src="/complete-profile/boy-city.png"
         alt="Girl Greeting"
-        width={300}
-        height={300}
-        className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 -z-50"
+        width={400}
+        height={400}
+        priority={true}
+        draggable={false}
+        className="absolute object-contain h-100 w-auto -bottom-10 left-1/2 transform -translate-x-1/2 -z-50"
       />
     </>
   );

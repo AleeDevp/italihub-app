@@ -9,6 +9,7 @@ cloudinary.config({
 
 export { cloudinary };
 
+// server side usage
 export function cldUrl(storageKey: string, opts?: { w?: number }) {
   const base = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`;
   const t = `f_auto,q_auto${opts?.w ? `,w_${opts.w}` : ''}`;

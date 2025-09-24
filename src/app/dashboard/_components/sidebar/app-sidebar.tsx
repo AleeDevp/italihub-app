@@ -1,16 +1,14 @@
 'use client';
 
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
+  ChartColumn,
+  HeartHandshake,
+  LayoutDashboard,
+  Logs,
+  Newspaper,
+  Settings,
+  UserCheck,
+  UserPen,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -21,154 +19,79 @@ import {
   SidebarHeader,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import { NavMain } from './nav-main';
-import { NavProjects } from './nav-projects';
-import { NavUser } from './nav-user';
-import { TeamSwitcher } from './team-switcher';
+import { useSession } from '@/lib/auth-client';
+import { NavMain } from './nav-projects';
 
 // This is sample data.
 const data = {
-  user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg',
-  },
-  teams: [
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
-    },
-    {
-      name: 'Evil Corp.',
-      logo: Command,
-      plan: 'Free',
-    },
-  ],
   navMain: [
     {
-      title: 'Playground',
+      name: 'Dashboard Home',
       url: '#',
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: 'History',
-          url: '#',
-        },
-        {
-          title: 'Starred',
-          url: '#',
-        },
-        {
-          title: 'Settings',
-          url: '#',
-        },
-      ],
+      icon: LayoutDashboard,
     },
     {
-      title: 'Models',
+      name: 'Overview',
       url: '#',
-      icon: Bot,
-      items: [
-        {
-          title: 'Genesis',
-          url: '#',
-        },
-        {
-          title: 'Explorer',
-          url: '#',
-        },
-        {
-          title: 'Quantum',
-          url: '#',
-        },
-      ],
+      icon: ChartColumn,
     },
     {
-      title: 'Documentation',
+      name: 'Ads Management',
       url: '#',
-      icon: BookOpen,
-      items: [
-        {
-          title: 'Introduction',
-          url: '#',
-        },
-        {
-          title: 'Get Started',
-          url: '#',
-        },
-        {
-          title: 'Tutorials',
-          url: '#',
-        },
-        {
-          title: 'Changelog',
-          url: '#',
-        },
-      ],
+      icon: Newspaper,
     },
     {
-      title: 'Settings',
+      name: 'Profile',
       url: '#',
-      icon: Settings2,
-      items: [
-        {
-          title: 'General',
-          url: '#',
-        },
-        {
-          title: 'Team',
-          url: '#',
-        },
-        {
-          title: 'Billing',
-          url: '#',
-        },
-        {
-          title: 'Limits',
-          url: '#',
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: 'Design Engineering',
-      url: '#',
-      icon: Frame,
+      icon: UserPen,
     },
     {
-      name: 'Sales & Marketing',
+      name: 'Verification',
       url: '#',
-      icon: PieChart,
+      icon: UserCheck,
     },
     {
-      name: 'Travel',
+      name: 'Activity Logs',
       url: '#',
-      icon: Map,
+      icon: Logs,
+    },
+    {
+      name: 'Security & Settings',
+      url: '#',
+      icon: Settings,
+    },
+    {
+      name: 'Support / Help',
+      url: '#',
+      icon: HeartHandshake,
     },
   ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const user = useSession().data?.user;
+  if (!user) {
+    return null;
+  }
+
   return (
     <Sidebar collapsible="icon" variant="floating" {...props}>
-      <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+      <SidebarHeader className="p-2">
+        <div className="max-h-[5rem] min-h-[5rem] shadow-sm rounded-md border bg-gradient-to-r from-pink-500 to-rose-500 p-2">
+          {/* <Image
+            src="/logo.png"
+            alt="ItaliHub Sidebar Logo"
+            width={140}
+            height={100}
+            className="object-contain"
+          /> */}
+          {/* <Separator className="-mt-3" /> */}
+        </div>
       </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+      <SidebarContent className="">
+        <NavMain projects={data.navMain} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
+      <SidebarFooter>{/* <NavUser user={user} /> */}</SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

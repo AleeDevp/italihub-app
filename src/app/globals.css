@@ -14,11 +14,11 @@
   --foreground: oklch(0.4426 0.1653 352.3762);
   --card: oklch(100% 0.00011 271.152);
   --card-foreground: oklch(0.4426 0.1653 352.3762);
-  --popover: oklch(0.9837 0.0107 339.3288);
+  --popover: oklch(97.614% 0.00011 271.152);
   --popover-foreground: oklch(0.4426 0.1653 352.3762);
   --primary: oklch(0.6002 0.2414 0.1348);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(91.525% 0.05004 352.568);
+  --secondary: oklch(95.815% 0.00011 271.152);
   --secondary-foreground: oklch(0.4426 0.1653 352.3762);
   --muted: oklch(0.9429 0.0363 344.2604);
   --muted-foreground: oklch(0.574 0.1732 352.0544);
@@ -34,7 +34,7 @@
   --chart-3: oklch(0.6009 0.1243 311.7958);
   --chart-4: oklch(0.5849 0.1178 283.2937);
   --chart-5: oklch(0.6479 0.1871 267.9684);
-  --sidebar: oklch(0.9629 0.0227 345.7485);
+  --sidebar: oklch(100% 0.00011 271.152);
   --sidebar-foreground: oklch(0.4426 0.1653 352.3762);
   --sidebar-primary: oklch(0.6002 0.2414 0.1348);
   --sidebar-primary-foreground: oklch(1 0 0);
@@ -45,7 +45,7 @@
   --font-sans: var(--font-fredoka), sans-serif;
   --font-serif: Playfair Display, serif;
   --font-mono: Space Mono, monospace;
-  --radius: 0.5rem;
+  --radius: 1rem;
 
   /* 3D looking shadows */
   /* --shadow-2xs: 0px 3px 0px 0px hsl(330 70% 30% / 0.09);

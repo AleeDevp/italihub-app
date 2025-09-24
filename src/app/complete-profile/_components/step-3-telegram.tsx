@@ -33,43 +33,50 @@ export function Step3Telegram({ form, onNext, onBack }: StepProps) {
 
   return (
     <>
-      {' '}
-      <div className="space-y-4 h-[430px]">
-        <FormField
-          control={form.control}
-          name="telegram"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Telegram ID</FormLabel>
-              <FormDescription>Enter your Telegram ID for communication.</FormDescription>
-              <FormControl>
-                <div className="relative">
-                  <Input {...field} placeholder="" className="peer ps-7.5" />
+      <div className="flex flex-col justify-between h-full p-8">
+        <div className="space-y-6">
+          <FormField
+            control={form.control}
+            name="telegram"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Telegram ID</FormLabel>
+                <FormDescription>Enter your Telegram ID for communications.</FormDescription>
+                <FormControl>
+                  <div className="relative">
+                    <Input {...field} placeholder="" className="peer ps-7.5" />
 
-                  <div className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-                    <AtSignIcon size={16} aria-hidden={true} />
+                    <div className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+                      <AtSignIcon size={16} aria-hidden={true} />
+                    </div>
                   </div>
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-      <div className="flex justify-between mb-0">
-        <Button type="button" variant="secondary" onClick={onBack}>
-          Back
-        </Button>
-        <Button type="button" onClick={handleNext} disabled={!isValid}>
-          Next
-        </Button>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <p className="text-muted-foreground">
+            {' '}
+            This is the way people contact you <br /> Bluh Bluh...
+          </p>
+        </div>
+        <div className="flex justify-between mb-0">
+          <Button type="button" variant="secondary" onClick={onBack}>
+            Back
+          </Button>
+          <Button type="button" onClick={handleNext} disabled={!isValid}>
+            Next
+          </Button>
+        </div>
       </div>
       <Image
         src="/complete-profile/girls-telegram.png"
         alt="Girl Greeting"
         width={400}
         height={400}
-        className="absolute bottom-0 left-1/2 transform -translate-x-1/2 -z-50"
+        priority={true}
+        draggable={false}
+        className="absolute object-contain h-80 w-auto bottom-0 left-1/2 transform -translate-x-1/2 -z-50"
       />
     </>
   );
