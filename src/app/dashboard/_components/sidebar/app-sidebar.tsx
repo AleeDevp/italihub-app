@@ -20,7 +20,11 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 import { useSession } from '@/lib/auth-client';
-import { NavMain } from './nav-projects';
+import { NavAccount } from './nav-account';
+import { NavActivity } from './nav-activity';
+import { NavAdsManagement } from './nav-ads-management';
+import { NavMain } from './nav-main';
+import { NavOthers } from './nav-others';
 
 // This is sample data.
 const data = {
@@ -35,11 +39,15 @@ const data = {
       url: '#',
       icon: ChartColumn,
     },
+  ],
+  navAdsManagement: [
     {
       name: 'Ads Management',
       url: '#',
       icon: Newspaper,
     },
+  ],
+  navAccount: [
     {
       name: 'Profile',
       url: '#',
@@ -51,15 +59,19 @@ const data = {
       icon: UserCheck,
     },
     {
-      name: 'Activity Logs',
-      url: '#',
-      icon: Logs,
-    },
-    {
       name: 'Security & Settings',
       url: '#',
       icon: Settings,
     },
+  ],
+  navActivity: [
+    {
+      name: 'Activity Logs',
+      url: '#',
+      icon: Logs,
+    },
+  ],
+  navOthers: [
     {
       name: 'Support / Help',
       url: '#',
@@ -89,7 +101,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </div>
       </SidebarHeader>
       <SidebarContent className="">
-        <NavMain projects={data.navMain} />
+        <NavMain items={data.navMain} />
+        <NavAdsManagement items={data.navAdsManagement} />
+        <NavAccount items={data.navAccount} />
+        <NavActivity items={data.navActivity} />
+        <NavOthers items={data.navOthers} />
       </SidebarContent>
       <SidebarFooter>{/* <NavUser user={user} /> */}</SidebarFooter>
       <SidebarRail />

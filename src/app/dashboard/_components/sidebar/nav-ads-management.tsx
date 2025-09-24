@@ -11,7 +11,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 
-export function NavMain({
+export function NavAdsManagement({
   items,
 }: {
   items: {
@@ -24,7 +24,7 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Tabs</SidebarGroupLabel>
+      <SidebarGroupLabel>Ads Management</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
