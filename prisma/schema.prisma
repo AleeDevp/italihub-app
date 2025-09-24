@@ -41,6 +41,26 @@ model User {
   sessions  Session[]
   accounts  Account[]
   ads       Ad[]
+  
+  // Verification relations
+  verificationRequests    VerificationRequest[] @relation("UserVerifications")
+  reviewedVerifications   VerificationRequest[] @relation("VerificationReviewer")
+  
+  // Moderation relations
+  moderationActions       ModerationAction[]
+  
+  // Reporting relations
+  reportedAds             AdReport[]
+  
+  // Notification relations
+  notifications           Notification[]
+  
+  // Announcement relations
+  announcementReads       AnnouncementRead[]
+  createdAnnouncements    Announcement[]
+  
+  // Policy relations
+  policyAcceptances       PolicyAcceptance[]
 
   //indexed so you can quickly find all users in a city
   @@unique([email])
@@ -123,6 +143,8 @@ model City {
   updatedAt DateTime @updatedAt
   User      User[]
   ads       Ad[]
+  verificationRequests VerificationRequest[]
+  announcements Announcement[]
 
   @@index([name])
   @@index([region])
@@ -298,6 +320,127 @@ enum SettlementMethod {
   OTHER
 }
 
+// ===== Verification Enums =====
+enum VerificationMethod {
+  LANDMARK_SELFIE    // selfie with recognizable city landmark
+  STUDENT_CARD
+  IDENTITA
+  PERMESSO
+  RENTAL_CONTRACT
+  OTHER
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VerificationFileRole {
+  DOCUMENT
+  SELFIE
+  OTHER
+}
+
+enum VerificationRejectionCode {
+  INSUFFICIENT_PROOF
+  CITY_MISMATCH
+  EXPIRED_DOCUMENT
+  UNREADABLE
+  OTHER
+}
+
+// ===== Moderation Enums =====
+enum ModerationTargetType {
+  AD
+  VERIFICATION
+  REPORT
+}
+
+enum ModerationActionType {
+  APPROVE
+  REJECT
+  EXPIRE
+  RESTORE
+  REQUEST_CHANGES
+  EDIT_NOTE
+  FLAG
+  UNFLAG
+  CLOSE          // e.g., close a verification/report ticket
+  DISMISS        // e.g., dismiss a report as no-action
+}
+
+enum ModerationReasonCode {
+  OFF_TOPIC
+  WRONG_CATEGORY
+  INCOMPLETE_DETAILS
+  SPAM
+  SCAM_FRAUD
+  PROHIBITED_ITEM
+  DUPLICATE
+  EXPIRED
+  OTHER
+}
+
+// ===== Reporting Enums =====
+enum ReportStatus {
+  OPEN
+  CLOSED
+}
+
+enum ReportReason {
+  SCAM_FRAUD
+  WRONG_CATEGORY
+  OFFENSIVE_CONTENT
+  PROHIBITED_ITEM
+  DUPLICATE
+  MISLEADING
+  SPAM
+  OTHER
+}
+
+enum ReportOutcome {
+  NO_ACTION
+  AD_REMOVED
+  AD_EDITED
+  USER_WARNED
+  OTHER
+}
+
+// ===== Notification Enums =====
+enum NotificationType {
+  AD_EVENT              // e.g., approved/rejected/pending/expired
+  VERIFICATION_EVENT    // e.g., approved/rejected/needs-more-info
+  REPORT_EVENT          // e.g., your report was closed/dismissed
+  SYSTEM_ANNOUNCEMENT   // maintenance, policy updates, etc.
+}
+
+enum NotificationSeverity {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+// ===== Announcement Enums =====
+enum AnnouncementScope {
+  GLOBAL   // shown to all users
+  CITY     // shown only to users in a specific city
+}
+
+enum AnnouncementAudience {
+  ALL_USERS
+  VERIFIED_ONLY
+  MODS_ADMINS
+}
+
+enum AnnouncementSeverity {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
 // ===== ads =====
 model Ad {
   id                  Int        @id @default(autoincrement())
@@ -329,6 +472,17 @@ model Ad {
   marketplace         AdMarketplace?    // 1:1 from ad_marketplace
   service             AdService?        // 1:1 from ad_service
   exchange            AdExchange?       // 1:1 from ad_exchange
+  
+  // Moderation and reporting relations
+  reports             AdReport[]
+  moderationActions   ModerationAction[]
+  
+  // Notification and policy relations
+  notifications       Notification[]
+  policyAcceptances   PolicyAcceptance[]
+
+  // AdMetricsDaily relation
+  metricsDaily        AdMetricsDaily[]
 
   @@map("ads")
   @@index([cityId, category, status, createdAt])
@@ -563,4 +717,411 @@ model AdExchange {
   @@map("ad_exchange")
   @@index([side])
   @@index([amountEur])
+}
+
+// ===== Verification Request =====
+model VerificationRequest {
+  id                 Int                  @id @default(autoincrement())
+
+  userId             String
+  user               User                 @relation("UserVerifications", fields: [userId], references: [id], onDelete: Cascade)
+  cityId             Int
+  city               City                 @relation(fields: [cityId], references: [id])
+
+  method             VerificationMethod
+  status             VerificationStatus   @default(PENDING)
+
+  // Timestamps
+  submittedAt        DateTime             @default(now())
+  reviewedAt         DateTime?
+
+  // Reviewer (moderator/admin)
+  reviewedByUserId   String?
+  reviewedBy         User?                @relation("VerificationReviewer", fields: [reviewedByUserId], references: [id])
+
+  // Free-form user note (optional context)
+  userNote           String?
+
+  // Reviewer/canned reasons on rejection (optional)
+  rejectionCode      VerificationRejectionCode?
+  rejectionNote      String?
+
+  // Attachments (PRIVATE storage)
+  files              VerificationFile[]
+
+  // Moderation relation
+  moderationActions  ModerationAction[]
+  
+  // Notification relation
+  notifications      Notification[]
+
+  // Bookkeeping
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@map("verification_requests")
+  @@index([userId, status])
+  @@index([cityId, status])
+  @@index([status, submittedAt])
+}
+
+model VerificationFile {
+  id               Int                   @id @default(autoincrement())
+
+  verificationId   Int
+  verification     VerificationRequest   @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+
+  role             VerificationFileRole  @default(DOCUMENT)
+
+  // Private object storage (derive signed URL server-side)
+  storageKey       String                @db.VarChar(512)
+  mimeType         String?               @db.VarChar(100)
+  bytes            Int?
+
+  createdAt        DateTime              @default(now())
+
+  @@map("verification_files")
+  @@index([verificationId])
+  @@unique([storageKey]) // prevent duplicate uploads referencing same key
+}
+
+// ===== Moderation Action =====
+model ModerationAction {
+  id               Int                     @id @default(autoincrement())
+
+  // Actor
+  actorUserId      String
+  actor            User                    @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  // Targets (exactly one must be set)
+  adId             Int?
+  ad               Ad?                     @relation(fields: [adId], references: [id], onDelete: SetNull)
+
+  verificationId   Int?
+  verification     VerificationRequest?    @relation(fields: [verificationId], references: [id], onDelete: SetNull)
+
+  reportId         Int?
+  report           AdReport?               @relation(fields: [reportId], references: [id], onDelete: SetNull)
+
+  targetType       ModerationTargetType
+
+  // Decision
+  action           ModerationActionType
+  reasonCode       ModerationReasonCode?
+  reasonText       String?                 // free-text note (user-visible or internal per policy)
+
+  // Optional status snapshot (string to stay generic across targets)
+  prevStatus       String?
+  nextStatus       String?
+
+  createdAt        DateTime                @default(now())
+
+  @@map("moderation_actions")
+  @@index([actorUserId, createdAt])
+  @@index([targetType, createdAt])
+  @@index([adId])
+  @@index([verificationId])
+  @@index([reportId])
+}
+
+// ===== Ad Report =====
+model AdReport {
+  id               Int           @id @default(autoincrement())
+
+  // What is being reported
+  adId             Int
+  ad               Ad            @relation(fields: [adId], references: [id], onDelete: Cascade)
+
+  // Who reported (nullable to allow anonymous/unauthenticated reports if you choose)
+  reporterUserId   String?
+  reporter         User?         @relation(fields: [reporterUserId], references: [id])
+
+  // Why
+  reason           ReportReason
+  note             String?
+
+  // Lifecycle
+  status           ReportStatus  @default(OPEN)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Resolution (set by moderators/admins)
+  closedAt         DateTime?
+  closedByUserId   String?
+  outcome          ReportOutcome?
+  resolutionNote   String?
+
+  // Evidence (private files)
+  files            ReportFile[]
+
+  // Moderation relation
+  moderationActions ModerationAction[]
+  
+  // Notification relation
+  notifications     Notification[]
+
+  @@map("ad_reports")
+  @@index([adId, status, createdAt])
+  @@index([reporterUserId, createdAt])
+}
+
+model ReportFile {
+  id           Int        @id @default(autoincrement())
+
+  reportId     Int
+  report       AdReport   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  // Private storage key; derive signed URL server-side
+  storageKey   String     @db.VarChar(512)
+  mimeType     String?    @db.VarChar(100)
+  bytes        Int?
+
+  createdAt    DateTime   @default(now())
+
+  @@map("report_files")
+  @@index([reportId])
+  @@unique([storageKey])
+}
+
+// ===== Notification =====
+model Notification {
+  id               Int                  @id @default(autoincrement())
+
+  // Recipient
+  userId           String
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Classification
+  type             NotificationType
+  severity         NotificationSeverity  @default(INFO)
+
+  // Content
+  title            String               @db.VarChar(140)
+  body             String               @db.VarChar(1000)
+
+  // Optional deep links to context
+  adId             Int?
+  ad               Ad?                  @relation(fields: [adId], references: [id], onDelete: SetNull)
+
+  verificationId   Int?
+  verification     VerificationRequest? @relation(fields: [verificationId], references: [id], onDelete: SetNull)
+
+  reportId         Int?
+  report           AdReport?            @relation(fields: [reportId], references: [id], onDelete: SetNull)
+
+  // Optional route or URL for front-end to navigate
+  deepLink         String?              @db.VarChar(255)
+
+  // Extra payload for client rendering (optional)
+  data             Json?
+
+  // Read state
+  readAt           DateTime?
+
+  // Timestamps
+  createdAt        DateTime             @default(now())
+
+  @@map("notifications")
+  @@index([userId, readAt, createdAt])   // fast unread + recent sorting
+  @@index([adId])
+  @@index([verificationId])
+  @@index([reportId])
+}
+
+// ===== Announcement =====
+model Announcement {
+  id              Int                  @id @default(autoincrement())
+
+  title           String               @db.VarChar(140)
+  body            String               @db.VarChar(2000)
+
+  severity        AnnouncementSeverity @default(INFO)
+
+  scope           AnnouncementScope
+  cityId          Int?                 // required when scope = CITY
+  city            City?                @relation(fields: [cityId], references: [id])
+
+  audience        AnnouncementAudience @default(ALL_USERS)
+
+  // Visibility window & flags
+  startsAt        DateTime             @default(now())
+  endsAt          DateTime?
+  isActive        Boolean              @default(true)
+  pinned          Boolean              @default(false)   // show at top
+  dismissible     Boolean              @default(true)
+
+  // Optional deep link or route
+  deepLink        String?              @db.VarChar(255)
+  data            Json?
+
+  // Admin/mod provenance
+  createdByUserId String
+  createdBy       User                 @relation(fields: [createdByUserId], references: [id])
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  // Reads
+  reads           AnnouncementRead[]
+
+  @@map("announcements")
+  @@index([isActive, startsAt, endsAt])
+  @@index([scope, cityId])
+  @@index([pinned])
+}
+
+model AnnouncementRead {
+  id              Int          @id @default(autoincrement())
+
+  announcementId  Int
+  announcement    Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt          DateTime?
+  dismissedAt     DateTime?
+  createdAt       DateTime     @default(now())
+
+  @@map("announcement_reads")
+  @@unique([announcementId, userId]) // one row per user per announcement
+  @@index([userId, readAt, dismissedAt])
+}
+
+// ===== Posting Policy =====
+model PostingPolicy {
+  id            Int        @id @default(autoincrement())
+
+  // Scope of the rules (per category; i18n-ready with locale)
+  category      AdCategory
+  locale        String     @db.VarChar(8) @default("en") // e.g., "en"
+
+  // Versioning & content
+  version       Int
+  contentUrl    String?    @db.VarChar(255) // optional public URL to rules page/section
+  contentHash   String?    @db.VarChar(64)  // e.g., SHA-256 of the content snapshot
+
+  // Lifecycle
+  isActive      Boolean    @default(true)
+  effectiveFrom DateTime   @default(now())
+  retiredAt     DateTime?
+
+  // Audit
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  acceptances   PolicyAcceptance[]
+
+  @@map("posting_policies")
+  @@unique([category, locale, version]) // one version per category/locale
+  @@index([isActive, effectiveFrom])
+}
+
+model PolicyAcceptance {
+  id            Int            @id @default(autoincrement())
+
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  policyId      Int
+  policy        PostingPolicy  @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  // Snapshot (optional, but handy for audits/exports)
+  acceptedAt    DateTime       @default(now())
+  ip            String?        @db.VarChar(45)
+  userAgent     String?        @db.VarChar(255)
+
+  // Optional link to the ad being posted when accepted (useful for traceability)
+  adId          Int?
+  ad            Ad?            @relation(fields: [adId], references: [id], onDelete: SetNull)
+
+  @@map("policy_acceptances")
+  @@unique([userId, policyId])     // user accepts a given version once
+  @@index([userId, acceptedAt])
+}
+
+
+
+
+model AdMetricsDaily {
+  // Composite PK: one row per ad per calendar day (Europe/Rome)
+  adId          Int
+  date          DateTime   // bucketed to 00:00:00 in Europe/Rome
+
+  views         Int        @default(0)
+  contactClicks Int        @default(0)
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  ad            Ad         @relation(fields: [adId], references: [id], onDelete: Cascade)
+
+  @@id([adId, date])
+  @@map("ad_metrics_daily")
+  @@index([date]) // fast range queries across many ads
+}
+
+
+enum AuditOutcome {
+  SUCCESS
+  FAILURE
+}
+
+enum AuditActorRole {
+  USER
+  VERIFIED_USER
+  MODERATOR
+  ADMIN
+  SYSTEM
+}
+
+enum AuditEntityType {
+  AD
+  AD_HOUSING
+  AD_TRANSPORTATION
+  AD_MARKETPLACE
+  AD_SERVICE
+  AD_EXCHANGE
+  PROFILE
+  VERIFICATION_REQUEST
+  AD_REPORT
+  ANNOUNCEMENT
+  NOTIFICATION
+  MEDIA_ASSET
+  CITY
+  OTHER
+}
+
+model AuditLog {
+  id              Int             @id @default(autoincrement())
+
+  // WHO
+  actorUserId     Int?            // null when SYSTEM or unauthenticated
+  actorRole       AuditActorRole? // snapshot of role at action time
+
+  // WHAT
+  action          String          @db.VarChar(64)   // e.g., "AD_CREATE", "AD_EDIT", "LOGIN", "VERIFY_APPROVE"
+  outcome         AuditOutcome
+  errorCode       String?         @db.VarChar(64)   // optional short code on FAILURE
+
+  // WHICH RESOURCE
+  entityType      AuditEntityType
+  entityId        Int?                                // e.g., adId, verificationId, etc.
+
+  // CONTEXT
+  requestId       String?         @db.VarChar(64)    // correlation id for a single HTTP request
+  sessionId       String?         @db.VarChar(64)
+  ip              String?         @db.VarChar(45)    // IPv4/IPv6
+  userAgent       String?         @db.VarChar(255)
+
+  // DETAILS (sanitized)
+  metadata        Json?           // e.g., { "diff": {...}, "payload": {...} } (NO secrets/PII)
+  note            String?         // optional human note
+
+  createdAt       DateTime        @default(now())
+
+  @@map("audit_logs")
+  @@index([createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([action, createdAt])
+  @@index([requestId])
 }

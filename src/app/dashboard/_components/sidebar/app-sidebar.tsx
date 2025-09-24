@@ -31,36 +31,36 @@ const data = {
   navMain: [
     {
       name: 'Dashboard Home',
-      url: '#',
+      url: '/dashboard',
       icon: LayoutDashboard,
     },
     {
       name: 'Overview',
-      url: '#',
+      url: '/dashboard/overview',
       icon: ChartColumn,
     },
   ],
   navAdsManagement: [
     {
       name: 'Ads Management',
-      url: '#',
+      url: '/dashboard/ads',
       icon: Newspaper,
     },
   ],
   navAccount: [
     {
       name: 'Profile',
-      url: '#',
+      url: '/dashboard/profile',
       icon: UserPen,
     },
     {
       name: 'Verification',
-      url: '#',
+      url: '/dashboard/verification',
       icon: UserCheck,
     },
     {
       name: 'Security & Settings',
-      url: '#',
+      url: '/dashboard/settings',
       icon: Settings,
     },
   ],
@@ -74,7 +74,7 @@ const data = {
   navOthers: [
     {
       name: 'Support / Help',
-      url: '#',
+      url: '/dashboard/support',
       icon: HeartHandshake,
     },
   ],

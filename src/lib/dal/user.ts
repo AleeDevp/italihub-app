@@ -100,3 +100,116 @@ export async function isUserIdAvailable(
     return { available: false, reason: 'taken' };
   }
 }
+
+/**
+ * Checks if a username is available (legacy function name for backward compatibility)
+ */
+export async function isUsernameAvailable(username: string): Promise<boolean> {
+  const result = await isUserIdAvailable(username);
+  return result.available;
+}
+
+/**
+ * Update user profile basics
+ */
+export async function updateProfileBasics(
+  userId: string,
+  data: {
+    name: string;
+    userId: string;
+    telegram: string;
+  }
+): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      name: data.name,
+      userId: data.userId.toLowerCase(),
+      telegramHandle: data.telegram || null,
+    },
+  });
+}
+
+/**
+ * Get extended user profile data with city information
+ */
+export async function getUserProfileData(userId: string): Promise<{
+  name: string;
+  userId: string;
+  telegramHandle: string;
+  cityId: number;
+  cityName: string;
+  profilePhotoKey?: string | null;
+  verified: boolean;
+  verifiedAt?: Date | null;
+  cityLastChangedAt?: Date | null;
+}> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      city: { select: { name: true } },
+    },
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  return {
+    name: user.name,
+    userId: user.userId || '',
+    telegramHandle: user.telegramHandle || '',
+    cityId: user.cityId || 0,
+    cityName: user.city?.name || '',
+    profilePhotoKey: user.image,
+    verified: user.verified,
+    verifiedAt: user.verifiedAt,
+    cityLastChangedAt: user.cityLastChangedAt,
+  };
+}
+
+/**
+ * Change user's city
+ */
+export async function changeCity(
+  userId: string,
+  newCityId: number
+): Promise<{
+  revokedVerification: boolean;
+}> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { verified: true, cityLastChangedAt: true },
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Check 10-day cooldown
+  if (user.cityLastChangedAt) {
+    const daysSinceChange = Math.floor(
+      (Date.now() - user.cityLastChangedAt.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (daysSinceChange < 10) {
+      throw new Error(`You can change your city again in ${10 - daysSinceChange} days`);
+    }
+  }
+
+  const wasVerified = user.verified;
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      cityId: newCityId,
+      cityLastChangedAt: new Date(),
+      verified: false,
+      verifiedAt: null,
+    },
+  });
+
+  return {
+    revokedVerification: wasVerified,
+  };
+}

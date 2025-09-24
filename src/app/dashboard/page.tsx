@@ -1,50 +1,31 @@
-'use client';
+import { WidgetSkeleton } from '@/components/dashboard/skeleton';
+import { requireUser } from '@/lib/require-user';
+import { Suspense } from 'react';
+import { DashboardHome } from './_components/dashboard-home';
 
-import { Skeleton } from '@/components/ui/skeleton';
-import { User } from '@/lib/auth';
-import { useSession } from '@/lib/auth-client';
-import ProfileInformation from './_components/profile-information';
-
-export default function DashboardPage() {
-  const { data, isPending } = useSession();
-  const user = data?.user as User;
-
-  if (isPending || !user) {
-    return (
-      <div className="mx-auto w-full max-w-6xl px-4 py-12">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-7 w-44" />
-            <Skeleton className="h-5 w-96" />
-          </div>
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-14 w-14 rounded-full" />
-              <div className="flex-1 space-y-3">
-                <Skeleton className="h-6 w-48" />
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <Skeleton className="h-4 w-52" />
-                  <Skeleton className="h-4 w-40" />
-                  <Skeleton className="h-4 w-36" />
-                  <Skeleton className="h-4 w-28" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+export default async function DashboardPage() {
+  const user = await requireUser();
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4">
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here&apos;s your account overview.</p>
-        </div>
-        <ProfileInformation user={user} />
+    <div className="mx-auto w-full max-w-6xl px-4 py-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight">
+          Welcome back, {user.name.split(' ')[0]}!
+        </h1>
+        <p className="text-muted-foreground">Here's an overview of your ItaliaHub activity</p>
       </div>
+
+      <Suspense
+        fallback={
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <WidgetSkeleton key={i} />
+            ))}
+          </div>
+        }
+      >
+        <DashboardHome userId={user.id} />
+      </Suspense>
     </div>
   );
 }

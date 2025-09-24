@@ -3,7 +3,6 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { requireUser } from '@/lib/auth';
 import type { Metadata } from 'next';
-import { cookies } from 'next/headers';
 import { unauthorized } from 'next/navigation';
 import { AppSidebar } from './_components/sidebar/app-sidebar';
 
@@ -23,12 +22,13 @@ export default async function DashboardLayout({
   }
 
   // Read sidebar cookie on the server to set the initial state and avoid hydration flicker
-  const cookieStore = await cookies();
-  const sidebarCookie = cookieStore.get('sidebar_state')?.value;
-  const defaultOpen = sidebarCookie ? sidebarCookie === 'true' : true;
+  // const cookieStore = await cookies();
+  // const sidebarCookie = cookieStore.get('sidebar_state')?.value;
+  // const defaultOpen = sidebarCookie ? sidebarCookie === 'true' : true;
 
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
+    // <SidebarProvider defaultOpen={defaultOpen}>
+    <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
         <header className="rounded-md  bg-background sticky top-0 py-2.5 h-fit flex shrink-0 gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-fit">
