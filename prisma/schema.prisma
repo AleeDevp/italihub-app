@@ -40,6 +40,7 @@ model User {
   updatedAt DateTime  @default(now()) @updatedAt
   sessions  Session[]
   accounts  Account[]
+  ads       Ad[]
 
   //indexed so you can quickly find all users in a city
   @@unique([email])
@@ -121,9 +122,445 @@ model City {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   User      User[]
+  ads       Ad[]
 
   @@index([name])
   @@index([region])
   @@index([provinceCode])
   @@map("cities")
+}
+
+// ===== Enums =====
+enum AdCategory {
+  HOUSING
+  TRANSPORTATION
+  MARKETPLACE
+  CURRENCY
+  SERVICES
+}
+
+enum AdStatus {
+  PENDING
+  ONLINE
+  REJECTED
+  EXPIRED
+}
+
+enum MarketplaceCondition {
+  NEW
+  LIKE_NEW
+  USED
+  HANDMADE
+}
+
+enum MediaRole {
+  GALLERY   // default gallery image(s)
+  POSTER    // e.g., Services poster
+}
+
+enum MediaKind {
+  IMAGE
+}
+
+// ===== Housing Enums =====
+enum HousingRentalKind {
+  TEMPORARY
+  PERMANENT
+}
+
+enum HousingUnitType {
+  WHOLE_APARTMENT
+  ROOM
+  BED
+}
+
+enum HousingPropertyType {
+  STUDIO
+  BILOCALE
+  TRILOCALE
+  QUADRILOCALE
+  OTHER
+}
+
+enum HousingRoomType {
+  SINGLE
+  DOUBLE
+  TRIPLE
+}
+
+enum HousingContractType {
+  NONE
+  SHORT_TERM
+  LONG_TERM
+}
+
+enum HousingPriceType {
+  MONTHLY
+  DAILY
+}
+
+enum BillsPolicy {
+  INCLUDED
+  EXCLUDED
+  PARTIAL
+}
+
+enum HouseholdGender {
+  MIXED
+  FEMALE_ONLY
+  MALE_ONLY
+  UNKNOWN
+}
+
+enum GenderPreference {
+  ANY
+  FEMALE_ONLY
+  MALE_ONLY
+}
+
+enum HeatingType {
+  CENTRAL
+  INDEPENDENT
+  NONE
+  UNKNOWN
+}
+
+// ===== Transportation Enums =====
+enum TransportDirection {
+  ITALY_TO_IRAN
+  IRAN_TO_ITALY
+}
+
+enum Country {
+  ITALY
+  IRAN
+}
+
+enum TransportPriceMode {
+  NEGOTIABLE
+  PER_KG
+  FIXED_TOTAL
+}
+
+// ===== Services Enums =====
+enum ServiceCategory {
+  COOKING
+  REPAIRS
+  CLEANING
+  TUTORING
+  TRANSLATION
+  BEAUTY
+  IT_HELP
+  MOVING
+  DELIVERY
+  OTHER
+}
+
+enum ServiceRateBasis {
+  HOURLY
+  FIXED
+  PER_TASK
+}
+
+enum Weekday {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
+
+// ===== Exchange Enums =====
+enum ExchangeSide {
+  BUY_EUR
+  SELL_EUR
+}
+
+enum ExchangeRateType {
+  MARKET
+  CUSTOM
+  NEGOTIABLE
+}
+
+enum ExchangeMode {
+  IN_PERSON
+  ONLINE
+  EITHER
+}
+
+enum SettlementMethod {
+  REVOLUT
+  PAYPAL
+  BONIFICO_SEPA
+  CASH_IN_PERSON
+  OTHER
+}
+
+// ===== ads =====
+model Ad {
+  id                  Int        @id @default(autoincrement())
+  userId              String
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cityId              Int
+  city                City       @relation(fields: [cityId], references: [id])
+  category            AdCategory
+  status              AdStatus   @default(PENDING)
+  expirationDate      DateTime?
+  viewsCount          Int        @default(0)
+  contactClicksCount  Int        @default(0)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  // Gallery relation (many images)
+  mediaAssets         MediaAsset[]  @relation("AdImages")
+
+  // O(1) cover pointer for list/SEO cards
+  coverMediaId        Int?
+  coverMedia          MediaAsset?   @relation("AdCover", fields: [coverMediaId], references: [id])
+
+  // Optional denormalized count (maintain in app code)
+  mediaCount          Int           @default(0)
+
+  // children relation "back-relations" (just one of them have value)
+  housing             AdHousing?        // 1:1 from ad_housing
+  transportation      AdTransportation? // 1:1 from ad_transportation
+  marketplace         AdMarketplace?    // 1:1 from ad_marketplace
+  service             AdService?        // 1:1 from ad_service
+  exchange            AdExchange?       // 1:1 from ad_exchange
+
+  @@map("ads")
+  @@index([cityId, category, status, createdAt])
+  @@index([expirationDate])
+  @@index([userId, createdAt])
+}
+
+model MediaAsset {
+  id          Int       @id @default(autoincrement())
+
+  // Gallery relationship
+  adId        Int
+  ad          Ad        @relation("AdImages", fields: [adId], references: [id], onDelete: Cascade)
+
+  kind        MediaKind @default(IMAGE)
+  role        MediaRole @default(GALLERY)
+
+  // Provider-agnostic key (e.g., "ads/123/abc.jpg"); build CDN URL at runtime
+  storageKey  String    @db.VarChar(512)
+  mimeType    String?   @db.VarChar(100)
+  checksum    String?   @db.VarChar(64)
+
+  alt         String?
+  order       Int       @default(0)
+
+  // Optional metadata
+  width       Int?
+  height      Int?
+  bytes       Int?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Cover relation (reverse)
+  adsCover    Ad[]      @relation("AdCover")
+
+  @@map("media_assets")
+  @@index([adId])
+  @@index([role, adId, order])
+  @@unique([adId, order]) // stable per-ad ordering
+  @@unique([storageKey])  // avoid duplicates
+}
+
+// ===== Ad Housing =====
+model AdHousing {
+  // Core
+  adId                   Int     @id
+  ad                     Ad      @relation(fields: [adId], references: [id], onDelete: Cascade)
+
+  // Rental & Unit
+  rentalKind             HousingRentalKind
+  unitType               HousingUnitType
+  propertyType           HousingPropertyType?
+
+  // Room specifics
+  roomType               HousingRoomType?
+  roomBedsTotal          Int?
+  roomBedsAvailable      Int?
+
+  // Availability & contract
+  availabilityStartDate  DateTime
+  availabilityEndDate    DateTime?
+  contractType           HousingContractType
+  residenzaAvailable     Boolean
+
+  // Pricing
+  priceType              HousingPriceType
+  priceAmount            Decimal?    @db.Decimal(10, 2)
+  priceNegotiable        Boolean
+  depositAmount          Decimal?    @db.Decimal(10, 2)
+  agencyFeeAmount        Decimal?    @db.Decimal(10, 2)
+
+  // Bills
+  billsPolicy            BillsPolicy
+  billsMonthlyEstimate   Decimal?    @db.Decimal(10, 2)
+  billsNotes             String?
+
+  // Property features
+  furnished              Boolean
+  floorNumber            Int?
+  hasElevator            Boolean
+  privateBathroom        Boolean
+  kitchenEquipped        Boolean
+  wifi                   Boolean
+  washingMachine         Boolean
+  dishwasher             Boolean
+  balcony                Boolean
+  terrace                Boolean
+  heatingType            HeatingType
+  doubleGlazedWindows    Boolean
+  airConditioning        Boolean
+
+  // Household
+  householdSize          Int
+  householdGender        HouseholdGender
+  genderPreference       GenderPreference
+  householdDescription   String?
+
+  // Location
+  neighborhood           String?
+  streetHint             String?
+  lat                    Decimal?    @db.Decimal(9, 6)
+  lng                    Decimal?    @db.Decimal(9, 6)
+  transitLines           String[]
+  shopsNearby            String[]
+
+  // Misc
+  notes                  String?
+
+  @@map("ad_housing")
+  @@index([priceAmount])
+  @@index([availabilityStartDate])
+}
+
+// ===== Ad Transportation =====
+model AdTransportation {
+  // Core
+  adId                   Int     @id
+  ad                     Ad      @relation(fields: [adId], references: [id], onDelete: Cascade)
+
+  // Route
+  direction              TransportDirection
+  departureCity          String
+  departureCountry       Country
+  arrivalCity            String
+  arrivalCountry         Country
+  additionalPickupCities String[]
+  additionalDeliveryCities String[]
+  routeNotes             String?
+
+  // Flight & Logistics
+  flightDate             DateTime
+  capacityKg             Decimal?    @db.Decimal(6, 2)
+  minAcceptKg            Int?
+  subjectToInspection    Boolean
+  documentsAccepted      Boolean
+  acceptedItemTypes      String[]
+  restrictedItemTypes    String[]
+  specialCapacityNotes   String?
+  offersPostalForwarding Boolean
+  acceptsPostalDropoff   Boolean
+  postalNotes            String?
+  deliveryEtaDays        Int?
+
+  // Pricing
+  priceMode              TransportPriceMode
+  pricePerKg             Decimal?    @db.Decimal(10, 2)
+  fixedTotalPrice        Decimal?    @db.Decimal(10, 2)
+  priceNotes             String?
+
+  // Misc
+  termsNotes             String?
+
+  @@map("ad_transportation")
+  @@index([flightDate])
+  @@index([departureCountry, arrivalCountry, flightDate])
+  @@index([departureCity, arrivalCity])
+}
+
+// ===== Ad Marketplace =====
+model AdMarketplace {
+  adId        Int     @id
+  ad          Ad      @relation(fields: [adId], references: [id], onDelete: Cascade)
+
+  title       String  @db.VarChar(255)
+  description String  @db.VarChar(2000)
+
+  price       Decimal @db.Decimal(10, 2) // allow 0.00 for "negotiable"
+  condition   MarketplaceCondition
+  category    String? // e.g., "electronics", "food", "clothing", "vehicles", "home_goods"
+
+  @@map("ad_marketplace")
+  @@index([price])
+  @@index([category])
+}
+
+// ===== Ad Service =====
+model AdService {
+  // Core
+  adId                 Int     @id
+  ad                   Ad      @relation(fields: [adId], references: [id], onDelete: Cascade)
+
+  // Content
+  title                String  @db.VarChar(255)
+  description          String  @db.VarChar(2000)
+
+  // Classification
+  serviceCategory      ServiceCategory
+  tags                 String[] @default([])
+
+  // Pricing
+  rateBasis            ServiceRateBasis
+  rateAmount           Decimal? @db.Decimal(10, 2) // null if not provided
+
+  // Availability & Area
+  availabilityDays     Weekday[] @default([])
+  serviceArea          String?
+
+  // Presentation
+  businessName         String?
+  portfolioLinks       String[] @default([])
+
+  @@map("ad_service")
+  @@index([serviceCategory])
+  @@index([rateBasis, rateAmount])
+}
+
+// ===== Ad Exchange =====
+model AdExchange {
+  // Core
+  adId                 Int     @id
+  ad                   Ad      @relation(fields: [adId], references: [id], onDelete: Cascade)
+
+  // Offer
+  side                 ExchangeSide
+  amountEur            Decimal  @db.Decimal(14, 2)
+  allowsPartial        Boolean  @default(true)
+  minChunkEur          Decimal? @db.Decimal(14, 2)
+
+  // Rate
+  rateType             ExchangeRateType
+  rateValue            Decimal? @db.Decimal(18, 4) // required when CUSTOM
+
+  // Settlement
+  exchangeMode         ExchangeMode
+  settlementMethods    SettlementMethod[]
+  otherSettlementNote  String?
+
+  // Meta
+  notes                String?
+
+  @@map("ad_exchange")
+  @@index([side])
+  @@index([amountEur])
 }
