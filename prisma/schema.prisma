@@ -1094,7 +1094,7 @@ model AuditLog {
   id              Int             @id @default(autoincrement())
 
   // WHO
-  actorUserId     Int?            // null when SYSTEM or unauthenticated
+  actorUserId     String?         // null when SYSTEM or unauthenticated
   actorRole       AuditActorRole? // snapshot of role at action time
 
   // WHAT

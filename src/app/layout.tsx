@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from 'next';
 
 import localFont from 'next/font/local';
 
+import { CitiesProvider } from '@/contexts/cities-context';
+import { getAllCities } from '@/lib/cache/city-cache';
 import './globals.css';
 
 // Define the Fredoka font (variable font support is automatic)
@@ -32,6 +34,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cities = await getAllCities(); // one warm-up per Node process, then RAM
+
   return (
     <html lang="en" className={fredoka.variable} suppressHydrationWarning>
       <body className={`${fredoka.className} antialiased`}>
@@ -41,7 +45,9 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         > */}
-        {children}
+        <CitiesProvider cities={cities} storageMode="session">
+          {children}
+        </CitiesProvider>
         <Toaster />
         {/* </ThemeProvider> */}
       </body>

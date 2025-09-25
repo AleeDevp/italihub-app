@@ -8,9 +8,6 @@ import { sendEmail } from './email/resend';
 
 const prisma = new PrismaClient();
 
-const from = process.env.BETTER_AUTH_EMAIL || 'delivered@resend.dev';
-const to = process.env.TEST_EMAIL || '';
-
 const baseURL: string | undefined =
   process.env.VERCEL === '1'
     ? process.env.VERCEL_ENV === 'production'
@@ -96,7 +93,7 @@ export const auth = betterAuth({
         input: true,
       },
       cityId: {
-        type: 'string',
+        type: 'number',
         required: false,
         input: true,
       },

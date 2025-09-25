@@ -5,6 +5,9 @@
   - A unique constraint covering the columns `[userId]` on the table `user` will be added. If there are existing duplicate values, this will fail.
 
 */
+-- CreateExtension
+CREATE EXTENSION IF NOT EXISTS citext;
+
 -- AlterTable
 ALTER TABLE "public"."user" ADD COLUMN     "cityId" INTEGER,
 ADD COLUMN     "cityLastChangedAt" TIMESTAMP(3),

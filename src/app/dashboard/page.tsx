@@ -24,7 +24,7 @@ export default async function DashboardPage() {
           </div>
         }
       >
-        <DashboardHome userId={user.id} />
+        <DashboardHome user={user} />
       </Suspense>
     </div>
   );

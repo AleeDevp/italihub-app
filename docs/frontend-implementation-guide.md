@@ -6,6 +6,7 @@ This document outlines critical considerations for frontend implementation based
 
 - [Authentication & User Management](#authentication--user-management)
 - [Profile Management & Verification](#profile-management--verification)
+- [City Management & Location](#city-management--location)
 - [Ad Creation & Management](#ad-creation--management)
 - [Media & File Handling](#media--file-handling)
 - [Search & Filtering](#search--filtering)
@@ -15,6 +16,8 @@ This document outlines critical considerations for frontend implementation based
 - [UI/UX Considerations](#uiux-considerations)
 - [Security & Privacy](#security--privacy)
 - [Performance & Optimization](#performance--optimization)
+- [Analytics & Metrics](#analytics--metrics)
+- [Audit Logging & Compliance](#audit-logging--compliance)
 
 ---
 
@@ -34,6 +37,36 @@ This document outlines critical considerations for frontend implementation based
 - **Profile Completion Gating**: Block certain features until profile is complete
 - **Telegram Handle**: Optional field for contact purposes (64 char limit)
 - **Role-Based Access**: Default "user" role with potential for admin/moderator roles
+
+### User Model Specifics
+
+#### Username System (ItaliaHub ID)
+
+- **Case-Insensitive Uniqueness**: Uses `@db.Citext` for `userId` field
+- **Optional Field**: Users can choose a custom username or remain without one
+- **Validation**: Check uniqueness in real-time during input
+- **Fallback**: If CITEXT unavailable, store lowercase copy with unique constraint
+
+#### City Assignment & Management
+
+- **Required for Features**: Most platform features require city assignment
+- **Cooldown Enforcement**: 10-day minimum between city changes
+- **Verification Reset**: Changing city revokes verification status
+- **Last Changed Tracking**: `cityLastChangedAt` field for cooldown logic
+
+#### Profile Completion Flow
+
+- **Multi-Step Process**: Guide users through required fields
+- **Feature Gating**: Block ad posting until profile complete
+- **Progress Indicators**: Show completion percentage
+- **Validation**: Real-time validation for required fields
+
+#### Contact Information
+
+- **Telegram Integration**: Optional `telegramHandle` for communication
+- **Character Limits**: 64 character limit for Telegram handles
+- **Validation**: Verify Telegram handle format (@username)
+- **Privacy Controls**: Let users control contact visibility
 
 ---
 
@@ -62,6 +95,109 @@ This document outlines critical considerations for frontend implementation based
 - **Verified-Only Features**: Currency exchange requires verified status
 - **Document Privacy**: Never expose storage keys publicly
 - **Status Transitions**: Handle all verification states in UI
+
+---
+
+## City Management & Location
+
+### City Data Structure
+
+- **Canonical Names**: Official Italian city names (e.g., "Torino")
+- **URL-Friendly Slugs**: Lowercase, hyphenated URLs (e.g., "torino")
+- **Administrative Hierarchy**: Region, province, and province codes
+- **Alternative Names**: Support for international spellings (e.g., "Turin" for "Torino")
+- **Geographic Coordinates**: Optional lat/lng for map features
+
+### Search & Selection Features
+
+- **Typeahead Search**: Fast city name autocomplete
+- **Multiple Name Support**: Search by official name or alternatives
+- **Regional Filtering**: Filter cities by region or province
+- **Popular Cities**: Manual sorting with `sortOrder` field
+- **Active/Inactive States**: Hide cities without deleting data
+
+### UI Implementation Requirements
+
+#### City Selection Interface
+
+- **Smart Search**: Search across `name`, `altNames`, `province`, and `region`
+- **Hierarchical Display**: Show "City, Province (Region)" format
+- **Map Integration**: Optional map view using lat/lng coordinates
+- **Favorites**: Remember user's frequently accessed cities
+- **Recent Selections**: Quick access to recently viewed cities
+
+#### Administrative Features
+
+- **City Status Management**: Enable/disable cities for new registrations
+- **Sorting Controls**: Drag-and-drop ordering for popular cities
+- **Bulk Operations**: Mass update city information
+- **Data Import**: Tools for importing new city data
+- **Geographic Tools**: Coordinate validation and map preview
+
+### Data Integrity & Validation
+
+- **Slug Generation**: Auto-generate from city names (lowercase + hyphenation)
+- **Uniqueness Checks**: Prevent duplicate slugs across cities
+- **Coordinate Validation**: Validate lat/lng ranges for Italy
+- **Name Normalization**: Consistent capitalization and formatting
+- **Province Code Validation**: Ensure valid Italian province codes
+
+### Performance Considerations
+
+- **Indexed Searches**: Optimize for name, region, and province queries
+- **Caching Strategy**: Cache popular cities and search results
+- **Lazy Loading**: Load city details on demand
+- **CDN Distribution**: Cache city data across geographic regions
+- **Search Optimization**: Use database full-text search capabilities
+
+### Localization & Display
+
+- **Primary Language**: Italian names as default
+- **Alternative Spellings**: English and other language variants
+- **Regional Context**: Display regional information for clarity
+- **Cultural Sensitivity**: Respect local naming conventions
+- **Format Consistency**: Standardized city name display formats
+
+### Integration Points
+
+- **User Profiles**: City assignment with cooldown enforcement
+- **Ad Scoping**: All ads scoped to specific cities
+- **Verification System**: City-specific verification requirements
+- **Search Filtering**: City-based content filtering
+- **Analytics**: City-level performance metrics
+
+### Key Implementation Guidelines
+
+```typescript
+// City search with alternatives
+const searchCities = (query: string) => {
+  return cities.filter(
+    (city) =>
+      city.name.toLowerCase().includes(query.toLowerCase()) ||
+      city.altNames.some((alt) => alt.toLowerCase().includes(query.toLowerCase())) ||
+      city.province?.toLowerCase().includes(query.toLowerCase())
+  );
+};
+
+// Slug generation
+const generateSlug = (cityName: string) => {
+  return cityName
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .replace(/[^a-z0-9]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+};
+```
+
+### Migration & Data Management
+
+- **City Data Sources**: Integration with official Italian geographic databases
+- **Update Procedures**: Process for adding new cities or updating information
+- **Historical Data**: Maintain history of city information changes
+- **Quality Assurance**: Validation procedures for city data accuracy
+- **Backup Strategy**: Regular backups of city configuration data
 
 ---
 
@@ -420,6 +556,156 @@ This document outlines critical considerations for frontend implementation based
 - **Monitoring**: Application and infrastructure monitoring
 - **Backup Strategy**: Regular database backups
 - **Rollback Plan**: Quick rollback procedures
+
+---
+
+## Analytics & Metrics
+
+### Ad Performance Tracking
+
+- **View Tracking**: Implement client-side view counting with proper throttling
+- **Contact Tracking**: Track when users reveal contact information
+- **Dual Counter System**:
+  - Real-time counters on Ad model (`viewsCount`, `contactClicksCount`)
+  - Daily bucketed metrics in `AdMetricsDaily` for analytics
+- **Timezone Handling**: Always bucket to Europe/Rome timezone (00:00:00)
+
+### Implementation Requirements
+
+- **Bot Protection**: Ignore views without JavaScript execution
+- **Access Validation**: Only count views for accessible/visible ads
+- **Transaction Safety**: Use database transactions for dual updates
+- **Privacy Compliance**: Don't store IP addresses in metrics (use audit logs if needed)
+
+### Analytics Dashboard Features
+
+- **Performance Charts**: Daily view/contact trends per ad
+- **Comparative Analytics**: Compare performance across ad categories
+- **Time-Range Filtering**: Support custom date ranges for analysis
+- **Export Functionality**: Allow users to export their ad performance data
+- **Real-Time Updates**: Show live view counts (with reasonable delays)
+
+### Key Implementation Points
+
+```typescript
+// Example client-side tracking
+const trackAdView = async (adId: number) => {
+  // Throttle: only track once per user per ad per day
+  const viewKey = `ad_view_${adId}_${new Date().toDateString()}`;
+  if (localStorage.getItem(viewKey)) return;
+
+  await fetch(`/api/ads/${adId}/track-view`, { method: 'POST' });
+  localStorage.setItem(viewKey, 'true');
+};
+
+// Example contact reveal tracking
+const trackContactReveal = async (adId: number) => {
+  await fetch(`/api/ads/${adId}/track-contact`, { method: 'POST' });
+};
+```
+
+### Data Retention & Performance
+
+- **Metrics Retention**: Keep daily metrics for at least 365 days
+- **Aggregation Strategy**: Consider hourly rollups for high-traffic ads
+- **Query Optimization**: Use date-based indexes for fast range queries
+- **Caching**: Cache aggregated metrics for dashboard performance
+
+---
+
+## Audit Logging & Compliance
+
+### Comprehensive Activity Tracking
+
+- **User Actions**: All significant user activities (login, profile changes, ad operations)
+- **System Events**: Automated processes and background operations
+- **Moderation Actions**: Complete audit trail of all moderation decisions
+- **Administrative Operations**: Admin panel activities and bulk operations
+
+### Action Categories & Naming
+
+Use standardized uppercase snake-case action names:
+
+- **Authentication**: `LOGIN`, `LOGOUT`, `PASSWORD_CHANGE`
+- **Profile Management**: `PROFILE_EDIT`, `CITY_CHANGE`, `VERIFICATION_SUBMIT`
+- **Ad Operations**: `AD_CREATE`, `AD_EDIT`, `AD_DELETE`, `AD_STATUS_SET`, `AD_RENEW`
+- **Moderation**: `AD_APPROVE`, `AD_REJECT`, `VERIFICATION_APPROVE`, `REPORT_CLOSE`
+- **System**: `BATCH_CLEANUP`, `MIGRATION_RUN`, `POLICY_UPDATE`
+
+### Frontend Integration Points
+
+- **Automatic Logging**: Integrate audit logging into all server actions
+- **Context Capture**: Automatically capture request context (IP, User-Agent, session)
+- **Error Tracking**: Log both successful and failed operations
+- **Correlation IDs**: Use request IDs to trace related operations
+
+### Implementation Strategy
+
+```typescript
+// Wrap all server actions with audit logging
+export const withAudit = (action: string, entityType: AuditEntityType) => {
+  return async (handler: Function) => {
+    const user = await getCurrentUser();
+    return withAuditLog(prisma, {
+      action,
+      entityType,
+      actorUserId: user?.id,
+      actorRole: user?.verified ? 'VERIFIED_USER' : 'USER',
+    })(handler);
+  };
+};
+
+// Usage in server actions
+export const createAd = withAudit(
+  'AD_CREATE',
+  'AD'
+)(async (formData) => {
+  // Ad creation logic
+});
+```
+
+### Privacy & Security Considerations
+
+- **Data Sanitization**: Never log passwords, tokens, or sensitive documents
+- **Metadata Limits**: Store only sanitized summaries in metadata field
+- **Access Control**: Restrict audit log access to authorized personnel only
+- **Retention Policy**: Implement 180-365 day retention with legal hold capabilities
+
+### Compliance Features
+
+- **Investigation Support**: Provide tools to trace user activities
+- **Rate Limit Tuning**: Use audit data to identify and prevent abuse
+- **Compliance Reporting**: Generate reports for regulatory requirements
+- **Data Export**: Support audit log exports for legal proceedings
+
+### Admin Dashboard Requirements
+
+- **Search & Filter**: Search by user, action, date range, entity type
+- **Real-Time Monitoring**: Live feed of critical system events
+- **Alert System**: Notify administrators of suspicious activities
+- **Visualization**: Charts showing activity patterns and trends
+- **Export Tools**: CSV/JSON export for analysis and compliance
+
+### Database Considerations
+
+- **Append-Only**: Never update or delete audit logs in normal operations
+- **Partitioning**: Consider monthly partitioning for high-volume systems
+- **Indexing**: Optimize for common query patterns (user, date, action, entity)
+- **Backup Strategy**: Ensure audit logs are included in backup/recovery plans
+
+### Error Handling
+
+- **Non-Blocking**: Audit logging failures should never break business flows
+- **Retry Logic**: Implement retry mechanisms for transient failures
+- **Fallback Logging**: Alternative logging when primary system fails
+- **Monitoring**: Alert on audit logging system failures
+
+### Development Guidelines
+
+- **Consistent Integration**: Use helper functions for consistent audit logging
+- **Transaction Awareness**: Log within same transaction as business operations
+- **Testing**: Include audit log verification in integration tests
+- **Documentation**: Document all tracked actions and their meanings
 
 ---
 
