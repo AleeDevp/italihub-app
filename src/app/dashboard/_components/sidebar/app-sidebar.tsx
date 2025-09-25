@@ -20,12 +20,13 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 import { useSession } from '@/lib/auth-client';
+import Image from 'next/image';
 import { NavAccount } from './nav-account';
 import { NavActivity } from './nav-activity';
 import { NavAdsManagement } from './nav-ads-management';
 import { NavMain } from './nav-main';
 import { NavOthers } from './nav-others';
-
+import { NavUser } from './nav-user';
 // This is sample data.
 const data = {
   navMain: [
@@ -88,15 +89,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" variant="floating" {...props}>
-      <SidebarHeader className="p-2">
-        <div className="max-h-[5rem] min-h-[5rem] shadow-sm rounded-md border bg-gradient-to-r from-pink-500 to-rose-500 p-2">
-          {/* <Image
+      <SidebarHeader className="p-2 pt-4">
+        <div className="flex items-center justify-center">
+          <Image
             src="/logo.png"
             alt="ItaliHub Sidebar Logo"
             width={140}
             height={100}
             className="object-contain"
-          /> */}
+          />
           {/* <Separator className="-mt-3" /> */}
         </div>
       </SidebarHeader>
@@ -107,7 +108,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavActivity items={data.navActivity} />
         <NavOthers items={data.navOthers} />
       </SidebarContent>
-      <SidebarFooter>{/* <NavUser user={user} /> */}</SidebarFooter>
+      <SidebarFooter>
+        <NavUser
+          user={{
+            name: 'Ali',
+            email: 'ali@example.com',
+            avatar: 'https://i.pravatar.cc/150?img=3',
+          }}
+        />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

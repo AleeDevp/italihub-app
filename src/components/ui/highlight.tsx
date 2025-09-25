@@ -215,9 +215,11 @@ function Highlight<T extends React.ElementType = 'div'>({ ref, ...props }: Highl
           <Component
             ref={localRef}
             data-slot="motion-highlight-container"
-            style={{ position: 'relative', zIndex: 1 }}
+            // zIndex 0 here; items & overlay manage their own layering. Keeping this low lets consumers add backgrounds safely.
+            style={{ position: 'relative', zIndex: 0 }}
             className={(props as ParentModeHighlightProps)?.containerClassName}
           >
+            {children}
             <AnimatePresence initial={false} mode="wait">
               {boundsState && (
                 <motion.div
@@ -244,12 +246,12 @@ function Highlight<T extends React.ElementType = 'div'>({ ref, ...props }: Highl
                     },
                   }}
                   transition={transition}
-                  style={{ position: 'absolute', zIndex: 0, ...style }}
+                  // Give the overlay a lower z-index than the item contents (which we set to 1) so it sits between container background and content.
+                  style={{ position: 'absolute', zIndex: 0, pointerEvents: 'none', ...style }}
                   className={cn(className, activeClassNameState)}
                 />
               )}
             </AnimatePresence>
-            {children}
           </Component>
         );
       }
@@ -538,7 +540,13 @@ function HighlightItem<T extends React.ElementType>({
       key={childValue}
       ref={localRef}
       data-slot="motion-highlight-item-container"
-      className={cn(mode === 'children' && 'relative', className)}
+      className={cn(
+        // Always relative so we can stack highlight overlay beneath item content in parent mode.
+        'relative',
+        // In parent mode we raise items above the moving highlight overlay (z-0) but below anything users explicitly raise.
+        mode === 'parent' && 'z-[1]',
+        className
+      )}
       {...dataAttributes}
       {...props}
       {...commonHandlers}

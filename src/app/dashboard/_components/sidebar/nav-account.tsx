@@ -1,6 +1,8 @@
 'use client';
 
-import { type LucideIcon } from 'lucide-react';
+import { ChevronRight, type LucideIcon } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 import {
   SidebarGroup,
@@ -8,7 +10,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from '@/components/ui/sidebar';
 
 export function NavAccount({
@@ -20,7 +21,7 @@ export function NavAccount({
     icon: LucideIcon;
   }[];
 }) {
-  const { isMobile } = useSidebar();
+  const pathname = usePathname();
 
   return (
     <SidebarGroup>
@@ -28,11 +29,20 @@ export function NavAccount({
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <a href={item.url}>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === item.url || pathname.startsWith(item.url)}
+            >
+              <Link
+                href={item.url}
+                prefetch
+                aria-current={pathname === item.url ? 'page' : undefined}
+                data-active={pathname === item.url ? 'true' : undefined}
+              >
                 <item.icon />
                 <span>{item.name}</span>
-              </a>
+                <ChevronRight className="ml-auto" />
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}

@@ -1,10 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* Import container card CSS custom properties */
-@import '../styles/container-card.css';
-/* @import './container.card.css'; */
-
 @import '../styles/backgrounds.css';
 
 /* @custom-variant dark (&:is(.dark *)); */
@@ -34,13 +30,13 @@
   --chart-3: oklch(0.6009 0.1243 311.7958);
   --chart-4: oklch(0.5849 0.1178 283.2937);
   --chart-5: oklch(0.6479 0.1871 267.9684);
-  --sidebar: oklch(100% 0.00011 271.152);
+  --sidebar: oklch(99.405% 0.00011 271.152);
   --sidebar-foreground: oklch(0.4426 0.1653 352.3762);
   --sidebar-primary: oklch(0.6002 0.2414 0.1348);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.8766 0.0828 344.8849);
+  --sidebar-accent: oklch(95.815% 0.00011 271.152);
   --sidebar-accent-foreground: oklch(0.4426 0.1653 352.3762);
-  --sidebar-border: oklch(0.9311 0.0448 343.3135);
+  --sidebar-border: oklch(93.403% 0.00011 271.152);
   --sidebar-ring: oklch(0.6002 0.2414 0.1348);
   --font-sans: var(--font-fredoka), sans-serif;
   --font-serif: Playfair Display, serif;
@@ -205,4 +201,8 @@ body {
   @apply h-14;
   width: calc(7 / 8 * 100%);
   z-index: 50; /* z-50 */
+}
+
+.bg-sidebar {
+  @apply bg-gradient-to-r from-sidebar to-neutral-100;
 }
