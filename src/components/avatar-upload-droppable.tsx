@@ -3,7 +3,8 @@
 import { CircleUserRoundIcon, XIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { useFileUpload, type FileWithPreview } from '@/hooks/use-file-upload';
+import { useFileUpload } from '@/hooks/use-file-upload';
+import type { FileWithPreview } from '@/lib/image-utils-client';
 
 type AvatarUploadDroppableProps = {
   // If provided, this URL will be used for preview instead of internal state
@@ -27,7 +28,7 @@ export default function AvatarUploadDroppable(props: AvatarUploadDroppableProps)
       handleDrop,
     },
   ] = useFileUpload({
-    accept: 'image/jpeg,image/png,image/webp,image/avif',
+    imageType: 'avatar', // NEW: Use unified validation system
     onFilesAdded: props.onFilesAdded,
   });
 

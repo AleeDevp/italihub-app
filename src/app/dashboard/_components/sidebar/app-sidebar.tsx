@@ -67,8 +67,8 @@ const data = {
   ],
   navActivity: [
     {
-      name: 'Activity Logs',
-      url: '#',
+      name: 'Notifications',
+      url: '/dashboard/notifications',
       icon: Logs,
     },
   ],

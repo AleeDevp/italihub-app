@@ -1,86 +1,129 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getUserProfileData } from '@/lib/dal/user';
-import { AtSign, Calendar, Edit, MapPin, MessageCircle, Shield, User } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { User } from '@/lib/auth';
+import { getCityById } from '@/lib/cache/city-cache';
+import { Calendar, Edit, MapPin, Shield, User as UserIcon } from 'lucide-react';
+import Link from 'next/link';
+import { RiTelegram2Line } from 'react-icons/ri';
+import { SiHandshake } from 'react-icons/si';
+import { ProfileAvatarSection } from './profile-avatar-section';
 
 interface ProfileContentProps {
   userId: string;
 }
 
-export async function ProfileContent({ userId }: ProfileContentProps) {
-  const profile = await getUserProfileData(userId);
+export async function ProfileContent({ user }: { user: User }) {
+  const userCityName = await getCityById(user.cityId as number);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 flex flex-wrap items-center justify-center ">
       {/* Main Profile Card */}
-      <Card>
+      <Card className="w-full max-w-3xl  mx-auto">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
+            <UserIcon className="h-5 w-5" />
             Profile Information
           </CardTitle>
           <CardDescription>Your personal information and verification status</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-start gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-stretch gap-6">
             {/* Avatar */}
-            <div className="flex flex-col items-center gap-3">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile.profilePhotoKey || undefined} />
-                <AvatarFallback className="text-xl">{profile.name[0]}</AvatarFallback>
-              </Avatar>
-              <Button variant="outline" size="sm">
-                <Edit className="h-4 w-4 mr-2" />
-                Change Photo
-              </Button>
-            </div>
+            <ProfileAvatarSection
+              userId={user.userId as string}
+              userName={user.name}
+              currentImageKey={user.image}
+            />
 
-            {/* Profile Details */}
-            <div className="flex-1 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Full Name</label>
-                  <p className="text-lg font-medium">{profile.name}</p>
-                </div>
+            <div className="flex-2 w-full space-y-4">
+              <div className="flex flex-col gap-4 border rounded-2xl py-4 px-6">
+                {/* Profile Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className=" text-xs uppercase tracking-wide text-muted-foreground">
+                      Name
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <UserIcon className="h-5 w-5 text-muted-foreground" />
+                      <Input variant="showcase" value={user.name} disabled className="" />
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Username (ItaliaHub ID)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <AtSign className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-lg font-medium">{profile.userId}</p>
+                  <div>
+                    <label className=" text-xs uppercase tracking-wide text-muted-foreground">
+                      ItaliaHub ID
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <SiHandshake className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Input variant="showcase" value={user.userId as string} disabled />
+                    </div>
                   </div>
                 </div>
+                <Separator />
 
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Telegram Handle
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-lg">{profile.telegramHandle || 'Not set'}</p>
+                {/* Telegram ID */}
+                {user.telegramHandle && (
+                  <div className="">
+                    <label className=" text-xs uppercase tracking-wide text-muted-foreground">
+                      Telegram ID
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <RiTelegram2Line className="h-4.5 w-4.5 text-muted-foreground" />
+                      <Input variant="showcase" value={user.telegramHandle || 'Not set'} disabled />
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Location</label>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-lg">{profile.cityName}</p>
-                  </div>
-                </div>
+                )}
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit Profile
+                </Button>
               </div>
 
+              {/* City Change Info */}
+              {user.cityLastChangedAt && (
+                <div className="flex flex-col space-y-3 border rounded-2xl py-4 px-6">
+                  <div>
+                    <label className=" text-xs uppercase tracking-wide text-muted-foreground">
+                      City
+                    </label>
+                    <div className="flex w-full justify-between">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <Input
+                          variant="showcase"
+                          className="w-[14ch]"
+                          value={userCityName?.name}
+                          disabled
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2 mt-1">
+                        <div className="text-[10px] flex flex-col items-center text-muted-foreground/50">
+                          <label>Last City Change</label>
+                          <span className="flex gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(user.cityLastChangedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    Change City
+                  </Button>
+                </div>
+              )}
+
               {/* Verification Status */}
-              <div className="pt-4 border-t">
-                <label className="text-sm font-medium text-muted-foreground">
+              <div className=" border rounded-2xl py-4 px-6">
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">
                   Verification Status
                 </label>
-                <div className="flex items-center gap-3 mt-2">
-                  {profile.verified ? (
+                <div className="flex items-center justify-between gap-3 mt-2">
+                  {user.verified ? (
                     <>
                       <Badge
                         variant="default"
@@ -89,9 +132,9 @@ export async function ProfileContent({ userId }: ProfileContentProps) {
                         <Shield className="h-3 w-3 mr-1" />
                         Verified
                       </Badge>
-                      {profile.verifiedAt && (
+                      {user.verifiedAt && (
                         <span className="text-sm text-muted-foreground">
-                          Verified on {new Date(profile.verifiedAt).toLocaleDateString()}
+                          Verified on {new Date(user.verifiedAt).toLocaleDateString()}
                         </span>
                       )}
                     </>
@@ -101,47 +144,24 @@ export async function ProfileContent({ userId }: ProfileContentProps) {
                         <Shield className="h-3 w-3 mr-1" />
                         Not Verified
                       </Badge>
+
                       <Button variant="outline" size="sm" asChild>
-                        <a href="/dashboard/verification">Get Verified</a>
+                        <Link href="/dashboard/verification">
+                          <Shield className="h-4 w-4 mr-1" />
+                          Get Verified
+                        </Link>
                       </Button>
                     </>
                   )}
                 </div>
               </div>
-
-              {/* City Change Info */}
-              {profile.cityLastChangedAt && (
-                <div className="pt-4 border-t">
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Last City Change
-                  </label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      {new Date(profile.cityLastChangedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t">
-            <Button>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Profile
-            </Button>
-            <Button variant="outline">
-              <MapPin className="h-4 w-4 mr-2" />
-              Change City
-            </Button>
           </div>
         </CardContent>
       </Card>
 
       {/* Profile Completion Tips */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>Profile Tips</CardTitle>
           <CardDescription>Complete your profile to get the most out of ItaliaHub</CardDescription>
@@ -198,7 +218,7 @@ export async function ProfileContent({ userId }: ProfileContentProps) {
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

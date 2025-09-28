@@ -1,12 +1,9 @@
 'use server';
 
-import {
-  deleteCloudinaryByStorageKey,
-  uploadImageToCloudinary,
-} from '@/lib/actions/uploud-image-cloudinary';
 import { requireUser } from '@/lib/auth';
 import { isUserIdAvailable } from '@/lib/dal/user';
 import { prisma } from '@/lib/db';
+import { AvatarService } from '@/lib/image-utils-server';
 import { CompleteProfileSchema } from '@/lib/schemas/complete-profile-schema';
 import { z } from 'zod';
 
@@ -74,12 +71,18 @@ export async function completeProfileAction(formData: FormData): Promise<Complet
     // Optional image upload first (so we can include its key when updating)
     let newImageKey: string | null = null;
     if (values.profilePic && typeof (values.profilePic as any).arrayBuffer === 'function') {
-      try {
-        const uploaded = await uploadImageToCloudinary(values.profilePic as File, user.id);
-        newImageKey = uploaded.storageKey;
-      } catch (e: any) {
-        return { ok: false, error: e?.message || 'Failed to upload image' };
+      // Use new AvatarService for upload - this handles validation, upload, and returns proper result
+      const uploadResult = await AvatarService.updateAvatar(
+        values.profilePic as File,
+        user.id,
+        null // No current avatar to replace since this is profile completion
+      );
+
+      if (!uploadResult.success) {
+        return { ok: false, error: uploadResult.error };
       }
+
+      newImageKey = uploadResult.data.storageKey; // Note: using storageKey instead of imageKey
     }
 
     // Apply DB updates in a transaction. If it fails, try to rollback the new cloud asset.
@@ -102,7 +105,8 @@ export async function completeProfileAction(formData: FormData): Promise<Complet
     } catch (e: any) {
       // Compensation: remove the just-uploaded image if DB write failed
       if (newImageKey) {
-        await deleteCloudinaryByStorageKey(newImageKey).catch(() => {});
+        const { deleteCloudinaryImage } = await import('@/lib/image-utils-server');
+        await deleteCloudinaryImage(newImageKey).catch(() => {});
       }
 
       // Check if it's a unique constraint violation on userId

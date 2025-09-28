@@ -17,14 +17,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { cropImageToBlob, validateImageFile, type CropArea } from '@/lib/image-utils-client';
 import { Step4Schema } from '@/lib/schemas/complete-profile-schema';
 import * as React from 'react';
 import { UseFormReturn, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 import Img from 'next/image';
-
-type Area = { x: number; y: number; width: number; height: number };
 
 interface StepProps {
   form: UseFormReturn<z.infer<typeof Step4Schema> & any>;
@@ -36,7 +35,7 @@ export function Step4Avatar({ form, onBack, onSubmit }: StepProps) {
   const file = useWatch({ control: form.control, name: 'profilePic' });
   const [open, setOpen] = React.useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = React.useState<string | null>(null);
-  const cropAreaRef = React.useRef<Area | null>(null);
+  const cropAreaRef = React.useRef<CropArea | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
 
   // Only show preview for the confirmed/cropped file stored in the form
@@ -55,11 +54,35 @@ export function Step4Avatar({ form, onBack, onSubmit }: StepProps) {
     }
   }, [file]);
 
-  const isValid = Step4Schema.safeParse({ profilePic: file }).success;
+  // Enhanced validation using both old schema and new image validation
+  const isValid = React.useMemo(() => {
+    if (!file) return true; // Allow no file (optional)
+
+    // First check with existing Step4Schema for backward compatibility
+    const basicValid = Step4Schema.safeParse({ profilePic: file }).success;
+    if (!basicValid) return false;
+
+    // Then validate with new image-specific validation for better error handling
+    if (file instanceof File) {
+      const imageValidation = validateImageFile(file, 'avatar');
+      return imageValidation.success;
+    }
+
+    return true;
+  }, [file]);
 
   const handleFilesAdded = React.useCallback((added: { file: File }[]) => {
     const f = added[0]?.file;
     if (!f) return;
+
+    // Enhanced validation using new image system
+    const validation = validateImageFile(f, 'avatar');
+    if (!validation.success) {
+      // Could show a toast or error message here
+      console.error('Avatar validation failed:', validation.error);
+      return;
+    }
+
     const url = URL.createObjectURL(f);
     setSelectedImageUrl(url);
     setOpen(true);
@@ -73,13 +96,28 @@ export function Step4Avatar({ form, onBack, onSubmit }: StepProps) {
   const onCropConfirm = React.useCallback(async () => {
     const area = cropAreaRef.current;
     if (!selectedImageUrl || !area) return;
-    const cropped = await cropImageToBlob(selectedImageUrl, area, 256, 256);
-    if (cropped) {
-      const file = new File([cropped.blob], 'avatar.png', { type: cropped.blob.type });
-      form.setValue('profilePic', file, { shouldValidate: true, shouldDirty: true });
-      setPreviewUrl(cropped.url);
+
+    try {
+      // Use avatar-optimized dimensions (from IMAGE_TYPE_CONFIGS)
+      const cropped = await cropImageToBlob(selectedImageUrl, area, 256, 256);
+      if (cropped) {
+        const file = new File([cropped.blob], 'avatar.png', { type: cropped.blob.type });
+
+        // Validate the cropped file as well
+        const validation = validateImageFile(file, 'avatar');
+        if (validation.success) {
+          form.setValue('profilePic', file, { shouldValidate: true, shouldDirty: true });
+          setPreviewUrl(cropped.url);
+        } else {
+          console.error('Cropped avatar validation failed:', validation.error);
+          return;
+        }
+      }
+      setOpen(false);
+    } catch (error) {
+      console.error('Failed to crop avatar:', error);
+      // Could show error toast here
     }
-    setOpen(false);
   }, [selectedImageUrl, form]);
 
   // Revoke selected image URL when it changes or component unmounts
@@ -144,7 +182,7 @@ export function Step4Avatar({ form, onBack, onSubmit }: StepProps) {
                   image={selectedImageUrl}
                   aspectRatio={1}
                   onCropChange={(a) => {
-                    const area = a as Area | null;
+                    const area = a as CropArea | null;
                     if (!area) {
                       cropAreaRef.current = null;
                       return;
@@ -198,34 +236,4 @@ export function Step4Avatar({ form, onBack, onSubmit }: StepProps) {
       />
     </>
   );
-}
-
-async function cropImageToBlob(
-  imageUrl: string,
-  area: Area,
-  outWidth: number,
-  outHeight: number
-): Promise<{ blob: Blob; url: string } | null> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = outWidth;
-      canvas.height = outHeight;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return resolve(null);
-
-      // Draw cropped region from original image scaled into output canvas
-      ctx.drawImage(img, area.x, area.y, area.width, area.height, 0, 0, outWidth, outHeight);
-
-      canvas.toBlob((blob) => {
-        if (!blob) return resolve(null);
-        const url = URL.createObjectURL(blob);
-        resolve({ blob, url });
-      }, 'image/png');
-    };
-    img.onerror = () => resolve(null);
-    img.src = imageUrl;
-  });
 }

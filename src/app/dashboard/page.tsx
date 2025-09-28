@@ -7,7 +7,7 @@ export default async function DashboardPage() {
   const user = await requireUser();
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6">
+    <div className="mx-auto w-full max-w-6xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">
           Welcome back, {user.name.split(' ')[0]}!

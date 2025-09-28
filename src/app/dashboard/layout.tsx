@@ -32,7 +32,7 @@ export default async function DashboardLayout({
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset className="star-pattern">
-          <header className="sticky top-0  pt-2 px-1 z-40">
+          <header className="sticky top-0 pt-2 px-1 z-40">
             <div className="w-full mx-auto py-1.5 px-4 rounded-sm bg-background/50 backdrop-blur-lg shadow-sm shrink-0 gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-fit">
               <div className="flex items-center gap-2 ">
                 <SidebarTrigger className="shadow-2xs" />
@@ -44,7 +44,7 @@ export default async function DashboardLayout({
               </div>
             </div>
           </header>
-          <main>{children}</main>
+          <main className="py-6 px-3 md:px-8 ">{children}</main>
         </SidebarInset>
       </SidebarProvider>
     </div>

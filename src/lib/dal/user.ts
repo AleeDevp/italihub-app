@@ -213,3 +213,29 @@ export async function changeCity(
     revokedVerification: wasVerified,
   };
 }
+
+/**
+ * Update user's profile picture
+ * This function handles the database operation for updating user image
+ */
+export async function updateUserProfilePicture(userId: string, imageKey: string): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      image: imageKey,
+    },
+  });
+}
+
+/**
+ * Get user's current profile picture key
+ * Used for cleanup operations
+ */
+export async function getUserProfilePicture(userId: string): Promise<string | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { image: true },
+  });
+
+  return user?.image || null;
+}

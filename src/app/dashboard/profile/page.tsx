@@ -18,7 +18,7 @@ export default async function ProfilePage() {
       </div>
 
       <Suspense fallback={<ProfileSkeleton />}>
-        <ProfileContent userId={user.id} />
+        <ProfileContent user={user} />
       </Suspense>
     </div>
   );
