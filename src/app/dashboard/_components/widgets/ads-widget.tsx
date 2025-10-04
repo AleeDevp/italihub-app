@@ -1,6 +1,6 @@
 import { StatusBadge } from '@/components/dashboard/status-badge';
 import { Widget } from '@/components/dashboard/widget';
-import type { AdStatus } from '@/generated/prisma';
+import type { AdStatus } from '@/lib/enums';
 import { Eye, FileText, MessageCircle } from 'lucide-react';
 
 export interface AdsWidgetProps {

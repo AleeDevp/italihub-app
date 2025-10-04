@@ -16,6 +16,7 @@ This document provides a comprehensive overview of all reusable functions, servi
 10. [Cache Layer](#cache-layer)
 11. [Email Services](#email-services)
 12. [Metadata Utilities](#metadata-utilities)
+13. [Prisma Enums (server + client)](#prisma-enums-server--client)
 
 ---
 
@@ -62,7 +63,7 @@ interface User {
   firstName?: string;
   lastName?: string;
   image: string | null;
-  role: 'user' | 'admin';
+  role: 'USER' | 'MODERATOR' | 'ADMIN';
   isProfileComplete: boolean;
   userId: string | null;
   telegramHandle: string | null;
@@ -343,7 +344,28 @@ import { authAction } from '@/lib/actions/auth-actions';
 
 ## Image Processing & Management
 
-Comprehensive image handling system with client/server separation and type-safe operations.
+Comprehensive unified image architecture with client/server separation, type-safe operations, and security-first design.
+
+### Architecture Overview
+
+The unified image system provides:
+
+- **Type-Safe Operations**: 9 predefined image types with specific constraints and optimizations
+- **Security-First Design**: Server-side MIME verification using `file-type` library
+- **Content-Hash Naming**: Automatic deduplication and integrity verification
+- **Provider Abstraction**: Clean separation between storage logic and business logic
+- **Comprehensive Error Handling**: Consistent `ServiceResult` pattern across all operations
+- **Automatic Cleanup**: Robust rollback mechanisms for failed operations
+
+**📋 Implementation Guide**: For step-by-step instructions on adding new image upload features, see [`docs/image-implementation-guide.md`](./image-implementation-guide.md).
+
+### Key Benefits:
+
+- **Consistency**: All image uploads follow the same patterns and validation rules
+- **Security**: Server-side validation prevents malicious file uploads
+- **Performance**: Type-specific optimizations and Cloudinary integration
+- **Maintainability**: Centralized configuration and reusable service classes
+- **Developer Experience**: Type safety and comprehensive error messages
 
 ### Client-Side Image Utilities (`/src/lib/image-utils-client.ts`)
 
@@ -357,7 +379,7 @@ import {
   getOptimizedUrl,
   cropImageToBlob,
   formatFileSize,
-  detectImageType,
+  detectFileType,
   handleServiceError,
   serviceToActionResult,
   IMAGE_TYPE_CONFIGS,
@@ -409,14 +431,19 @@ import {
   - **Return Type**: `string`
   - **Example**: `formatFileSize(1024)` → `"1 KB"`
 
-- **`detectImageType(file)`**: Detect appropriate image type from file characteristics
+- **`detectFileType(file)`**: Detect image file type from MIME (jpg, png, webp, avif, etc.)
   - **Use Case**: Auto-categorization of uploaded images
 
 #### Configuration & Types:
 
 - **`IMAGE_TYPE_CONFIGS`**: Complete configuration for all image types
-  - **Types**: `avatar`, `cover`, `gallery`, `thumbnail`, `content`, `background`, `icon`, `banner`
+  - **Types**: `avatar`, `cover`, `gallery`, `thumbnail`, `content`, `background`, `icon`, `banner`, `verification`
   - **Properties**: `maxSizeBytes`, `allowedMimeTypes`, `dimensions`, `quality`, `folder`
+  - **Special Cases**:
+    - **`verification`**: Supports only images (8MB limit, no forced dimensions, single file upload)
+    - **`avatar`**: Square 1:1 ratio with 256x256 optimization
+    - **`cover`**: Wide 3:1 ratio for profile covers
+    - **`banner`**: Wide 4:1 ratio for promotional content
 
 - **`IMAGE_ERROR_MESSAGES`**: Standardized error messages for consistent UX
 - **Type Definitions**: `ImageType`, `CropArea`, `FileMetadata`, `FileWithPreview`
@@ -467,8 +494,17 @@ import {
 #### Specialized Services:
 
 - **`ImageService`**: Base class for all image operations
-  - **Methods**: `upload()`, `delete()`, `validateAndUpload()`
-  - **Features**: Consistent error handling, logging, retry logic
+  - **Methods**:
+    - **`uploadImage(file, userId, imageType)`**: Upload single image with validation
+    - **`replaceImage(file, currentKey, userId, imageType)`**: Replace existing image with cleanup
+    - **`deleteImage(storageKey)`**: Delete single image safely
+    - **`batchUploadImages(files, userId, imageType)`**: Upload multiple images efficiently
+  - **Features**:
+    - **Server-side MIME verification** using `file-type` library for security
+    - **Content-hash naming** for deduplication and integrity
+    - **Automatic cleanup** on failures with rollback capabilities
+    - **Consistent error handling** with ServiceResult pattern
+    - **Retry logic** for robust upload operations
 
 - **`AvatarService`**: Profile picture management
   - **Methods**: `updateAvatar()`, `deleteAvatar()`
@@ -695,12 +731,7 @@ import {
 ### Complete Profile Schemas (`/src/lib/schemas/complete-profile-schema.ts`)
 
 ```typescript
-import {
-  CompleteProfileSchema,
-  Step4Schema,
-  MAX_PROFILE_PIC_BYTES,
-  ACCEPTED_PROFILE_PIC_TYPES,
-} from '@/lib/schemas/complete-profile-schema';
+import { CompleteProfileSchema, Step4Schema } from '@/lib/schemas/complete-profile-schema';
 ```
 
 - **`CompleteProfileSchema`**: Comprehensive profile completion validation
@@ -708,12 +739,13 @@ import {
   - **`userId`**: 4-10 characters, alphanumeric + underscore, no consecutive underscores
   - **`city`**: Must be valid Italian city ID from database
   - **`telegram`**: Valid Telegram username format (@username)
-  - **`profilePic`**: Optional file validation with size and format restrictions
+  - **`profilePic`**: Optional file validation integrated with unified image system
 
 - **`Step4Schema`**: Extracted profile picture validation for reuse
-- **Constants**:
-  - **`MAX_PROFILE_PIC_BYTES`**: File size limit (6MB)
-  - **`ACCEPTED_PROFILE_PIC_TYPES`**: Allowed MIME types array
+- **Image Validation**: Uses unified image system (`IMAGE_TYPE_CONFIGS['avatar']`) for consistent validation across the application
+  - **Size Limit**: 6MB (from avatar configuration)
+  - **Allowed Formats**: JPEG, PNG, WebP, AVIF (from avatar configuration)
+  - **Dimensions**: Optimized for 256x256 avatar display
 
 ### Dashboard Schemas (`/src/lib/schemas/dashboard.ts`)
 
@@ -801,7 +833,7 @@ import {
 ```
 
 - **`ImageType`**: Union of supported image categories
-  - **Values**: `'avatar' | 'cover' | 'gallery' | 'thumbnail' | 'content' | 'background' | 'icon' | 'banner'`
+  - **Values**: `'avatar' | 'cover' | 'gallery' | 'thumbnail' | 'content' | 'background' | 'icon' | 'banner' | 'verification'`
   - **Use Case**: Type-safe image operations with category-specific constraints
 
 - **`ImageTypeConfig`**: Configuration object for each image type
@@ -1172,7 +1204,7 @@ export function AvatarUpload() {
 ### Smart Image Display with Optimization:
 
 ```typescript
-import { resolveImageUrl } from '@/lib/image-utils-client';
+import { resolveImageUrl, generateCloudinaryUrl } from '@/lib/image-utils-client';
 import { useCities, useCityName } from '@/contexts/cities-context';
 
 export function UserCard({ user }: { user: User }) {
@@ -1306,13 +1338,15 @@ The application uses **Better Auth** as the core authentication system:
 
 ### Image Processing Architecture
 
-Unified image system with clear client/server boundaries:
+**Unified image architecture** with security-first design and clear client/server boundaries:
 
-- **Client-Side** (`/src/lib/image-utils-client.ts`): Browser-safe validation, URL generation, cropping
-- **Server-Side** (`/src/lib/image-utils-server.ts`): Cloudinary operations, specialized services
-- **Type Safety**: Strongly typed with `ImageType` categories and configuration objects
-- **Service Pattern**: Specialized services (AvatarService, etc.) for complete workflows
-- **Error Handling**: Consistent `ServiceResult` and `ActionResult` patterns
+- **Client-Side** (`/src/lib/image-utils-client.ts`): Browser-safe validation, URL generation, cropping, and optimization
+- **Server-Side** (`/src/lib/image-utils-server.ts`): Cloudinary operations, specialized services, server-side MIME verification
+- **Security Features**: Server-side MIME verification using `file-type` library, content-hash naming for integrity
+- **Type Safety**: Strongly typed with 9 `ImageType` categories and centralized configuration objects
+- **Service Pattern**: Specialized services (AvatarService, etc.) with complete workflows and automatic cleanup
+- **Provider Abstraction**: Clean separation between storage providers (Cloudinary) and business logic
+- **Error Handling**: Consistent `ServiceResult` and `ActionResult` patterns with comprehensive rollback mechanisms
 
 ### Data Access Layer (DAL) Pattern
 
@@ -1355,3 +1389,109 @@ Comprehensive type safety from client to database:
 This documentation reflects the current state of the ItaliaHub application as of **September 2025**. All functions, hooks, and services documented here are actively used in production and follow established architectural patterns. The codebase maintains strict separation of concerns, comprehensive type safety, and consistent error handling patterns throughout.
 
 For questions about specific implementations or architectural decisions, refer to the source code in the referenced file paths or consult the team's development guidelines.
+
+---
+
+## Prisma Enums (server + client)
+
+Centralized, type-safe usage of Prisma enums across server and client with zero duplication.
+
+### Generation
+
+- Generator configuration (in `prisma/schema.prisma`):
+
+```prisma
+generator enum {
+  provider = "prisma-generator-enum"
+  output   = "../src/generated/enums.ts"
+}
+```
+
+- After editing enums in Prisma schema, run generate to sync:
+
+```powershell
+npx prisma generate
+```
+
+This produces a tiny client-safe module at `src/generated/enums.ts` that exports const enum objects and their string literal types. Prisma Client continues to be generated at `src/generated/prisma` (as configured already).
+
+### Unified import helper
+
+- Use `src/lib/enums/index.ts` for a single import surface:
+  - Types re-exported from `@/generated/prisma` (server-safe types)
+  - Runtime enum objects re-exported as `Enum` from `@/generated/enums` (client-safe values)
+  - Helpers: `valuesOf`, `humanize`, `toOptions`
+
+```ts
+// Types (usable both server and client as type-only imports)
+import type { AdStatus, ServiceCategory } from '@/lib/enums';
+
+// Runtime enum objects and helpers (client-safe)
+import { Enum, valuesOf, toOptions, humanize } from '@/lib/enums';
+
+// Build UI options
+const statusValues = valuesOf(Enum.AdStatus); // ['PENDING','ONLINE','REJECTED','EXPIRED']
+const statusOptions = toOptions(Enum.AdStatus); // [{ value: 'PENDING', label: 'Pending' }, ...]
+```
+
+### Server-side usage
+
+- Safe in server contexts (DAL, server actions, RSC):
+  - Use type-only imports for enum types
+  - Use generated runtime enum objects for validation (e.g., Zod)
+
+```ts
+import 'server-only';
+import { z } from 'zod';
+import type { ServiceCategory } from '@/lib/enums';
+import { Enum } from '@/lib/enums';
+
+// Zod validation using generated runtime object
+const serviceSchema = z.object({
+  category: z.nativeEnum(Enum.ServiceCategory),
+});
+
+// Inferred TS types align with Prisma enums
+type ServiceForm = z.infer<typeof serviceSchema> & { category: ServiceCategory };
+```
+
+Why this is good:
+
+- Zero duplication — enums are single-sourced in Prisma schema
+- `z.nativeEnum(...)` stays in sync after `prisma generate`
+- No Prisma runtime bundled in client code
+
+### Client-side usage
+
+- Never import `@prisma/client` (or your generated Prisma client) in client components.
+- Import from `@/lib/enums` instead:
+
+```tsx
+'use client';
+import { Enum, toOptions } from '@/lib/enums';
+import type { AdStatus } from '@/lib/enums';
+
+const options = toOptions(Enum.AdStatus);
+
+export function StatusSelect(props: { value: AdStatus; onChange: (v: AdStatus) => void }) {
+  return (
+    <select value={props.value} onChange={(e) => props.onChange(e.target.value as AdStatus)}>
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+```
+
+### Notes and conventions
+
+- Add or update enums only in `prisma/schema.prisma`, then run `npx prisma generate`.
+- In server files: prefer type-only imports from `@/lib/enums` and use `Enum.X` for runtime values.
+- In client files: import both types and runtime values from `@/lib/enums`.
+- Helpers:
+  - `valuesOf(Enum.X)` → array of values
+  - `humanize('SOME_VALUE')` → `Some Value`
+  - `toOptions(Enum.X)` → `{ value, label }[]` for selects

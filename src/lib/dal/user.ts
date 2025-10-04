@@ -1,3 +1,6 @@
+import type { AuditAction, AuditActorRole, AuditEntityType, UserRole } from '@/generated/enums';
+import { auditServerAction } from '@/lib/audit';
+import { getEnhancedAuditContext } from '@/lib/audit-context';
 import { prisma } from '@/lib/db';
 import { CompleteProfileSchema } from '@/lib/schemas/complete-profile-schema';
 
@@ -110,7 +113,109 @@ export async function isUsernameAvailable(username: string): Promise<boolean> {
 }
 
 /**
- * Update user profile basics
+ * Update user profile name
+ */
+export async function updateProfileName(
+  userId: string,
+  newName: string,
+  metadata: { before: string; newValue: string }
+): Promise<void> {
+  const auditContext = await getEnhancedAuditContext();
+
+  await auditServerAction(
+    'PROFILE_NAME_EDIT',
+    'USER' as AuditEntityType,
+    async () => {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          name: newName,
+        },
+      });
+
+      return { success: true };
+    },
+    {
+      actorUserId: userId,
+      actorRole: 'USER' as AuditActorRole,
+      ...auditContext,
+    },
+    undefined,
+    'User updated profile name',
+    metadata
+  );
+}
+
+/**
+ * Update user profile userId
+ */
+export async function updateProfileUserId(
+  userId: string,
+  newUserId: string,
+  metadata: { before: string; newValue: string }
+): Promise<void> {
+  const auditContext = await getEnhancedAuditContext();
+
+  await auditServerAction(
+    'PROFILE_USERID_EDIT',
+    'USER' as AuditEntityType,
+    async () => {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          userId: newUserId.toLowerCase(),
+        },
+      });
+
+      return { success: true };
+    },
+    {
+      actorUserId: userId,
+      actorRole: 'USER' as AuditActorRole,
+      ...auditContext,
+    },
+    undefined,
+    'User updated profile userId',
+    metadata
+  );
+}
+
+/**
+ * Update user profile telegram handle
+ */
+export async function updateProfileTelegram(
+  userId: string,
+  newTelegram: string,
+  metadata: { before: string | null; newValue: string | null }
+): Promise<void> {
+  const auditContext = await getEnhancedAuditContext();
+
+  await auditServerAction(
+    'PROFILE_TELEGRAMID_EDIT',
+    'USER' as AuditEntityType,
+    async () => {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          telegramHandle: newTelegram || null,
+        },
+      });
+
+      return { success: true };
+    },
+    {
+      actorUserId: userId,
+      actorRole: 'USER' as AuditActorRole,
+      ...auditContext,
+    },
+    undefined,
+    'User updated profile telegram handle',
+    metadata
+  );
+}
+
+/**
+ * Update user profile basics (legacy function for backward compatibility)
  */
 export async function updateProfileBasics(
   userId: string,
@@ -120,14 +225,31 @@ export async function updateProfileBasics(
     telegram: string;
   }
 ): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      name: data.name,
-      userId: data.userId.toLowerCase(),
-      telegramHandle: data.telegram || null,
+  const auditContext = await getEnhancedAuditContext();
+
+  await auditServerAction(
+    'PROFILE_EDIT' as AuditAction,
+    'USER' as AuditEntityType,
+    async () => {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          name: data.name,
+          userId: data.userId.toLowerCase(),
+          telegramHandle: data.telegram || null,
+        },
+      });
+
+      return { success: true };
     },
-  });
+    {
+      actorUserId: userId,
+      actorRole: 'USER' as AuditActorRole,
+      ...auditContext,
+    },
+    undefined,
+    'User updated profile basics'
+  );
 }
 
 /**
@@ -179,7 +301,7 @@ export async function changeCity(
 }> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { verified: true, cityLastChangedAt: true },
+    select: { verified: true, cityLastChangedAt: true, cityId: true },
   });
 
   if (!user) {
@@ -197,21 +319,35 @@ export async function changeCity(
     }
   }
 
+  const auditContext = await getEnhancedAuditContext();
   const wasVerified = user.verified;
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      cityId: newCityId,
-      cityLastChangedAt: new Date(),
-      verified: false,
-      verifiedAt: null,
-    },
-  });
+  return await auditServerAction(
+    'CITY_CHANGE' as AuditAction,
+    'USER' as AuditEntityType,
+    async () => {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          cityId: newCityId,
+          cityLastChangedAt: new Date(),
+          verified: false,
+          verifiedAt: null,
+        },
+      });
 
-  return {
-    revokedVerification: wasVerified,
-  };
+      return {
+        revokedVerification: wasVerified,
+      };
+    },
+    {
+      actorUserId: userId,
+      actorRole: 'USER' as AuditActorRole,
+      ...auditContext,
+    },
+    undefined,
+    'User changed city'
+  );
 }
 
 /**
@@ -219,12 +355,29 @@ export async function changeCity(
  * This function handles the database operation for updating user image
  */
 export async function updateUserProfilePicture(userId: string, imageKey: string): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      image: imageKey,
+  const auditContext = await getEnhancedAuditContext();
+
+  await auditServerAction(
+    'PROFILE_PHOTO_CHANGE' as AuditAction,
+    'USER' as AuditEntityType,
+    async () => {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          image: imageKey,
+        },
+      });
+
+      return { success: true };
     },
-  });
+    {
+      actorUserId: userId,
+      actorRole: 'USER' as AuditActorRole,
+      ...auditContext,
+    },
+    undefined,
+    'User updated profile picture'
+  );
 }
 
 /**
@@ -238,4 +391,124 @@ export async function getUserProfilePicture(userId: string): Promise<string | nu
   });
 
   return user?.image || null;
+}
+
+/**
+ * Delete user's profile picture
+ */
+export async function deleteUserProfilePicture(userId: string): Promise<void> {
+  const auditContext = await getEnhancedAuditContext();
+
+  await auditServerAction(
+    'PROFILE_PHOTO_DELETE' as AuditAction,
+    'USER' as AuditEntityType,
+    async () => {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          image: null,
+        },
+      });
+
+      return { success: true };
+    },
+    {
+      actorUserId: userId,
+      actorRole: 'USER' as AuditActorRole,
+      ...auditContext,
+    },
+    undefined,
+    'User deleted profile picture'
+  );
+}
+
+/**
+ * Assign role to user (admin action)
+ */
+export async function assignUserRole(
+  targetUserId: string,
+  newRole: UserRole,
+  adminUserId: string,
+  adminRole: AuditActorRole = 'ADMIN'
+): Promise<void> {
+  const auditContext = await getEnhancedAuditContext();
+
+  await auditServerAction(
+    'ROLE_ASSIGN' as AuditAction,
+    'USER' as AuditEntityType,
+    async () => {
+      const currentUser = await prisma.user.findUnique({
+        where: { id: targetUserId },
+        select: { role: true },
+      });
+
+      if (!currentUser) {
+        throw new Error('User not found');
+      }
+
+      await prisma.user.update({
+        where: { id: targetUserId },
+        data: {
+          role: newRole,
+        },
+      });
+
+      return {
+        previousRole: currentUser.role,
+        newRole,
+      };
+    },
+    {
+      actorUserId: adminUserId,
+      actorRole: adminRole,
+      ...auditContext,
+    },
+    parseInt(targetUserId), // Target user as entity
+    `Admin assigned role ${newRole} to user`
+  );
+}
+
+/**
+ * Revoke role from user (admin action)
+ */
+export async function revokeUserRole(
+  targetUserId: string,
+  adminUserId: string,
+  adminRole: AuditActorRole = 'ADMIN'
+): Promise<void> {
+  const auditContext = await getEnhancedAuditContext();
+
+  await auditServerAction(
+    'ROLE_REVOKE' as AuditAction,
+    'USER' as AuditEntityType,
+    async () => {
+      const currentUser = await prisma.user.findUnique({
+        where: { id: targetUserId },
+        select: { role: true },
+      });
+
+      if (!currentUser) {
+        throw new Error('User not found');
+      }
+
+      await prisma.user.update({
+        where: { id: targetUserId },
+        data: {
+          role: 'USER' as UserRole, // Default role
+        },
+      });
+
+      return {
+        previousRole: currentUser.role,
+        newRole: 'USER',
+      };
+    },
+    {
+      actorUserId: adminUserId,
+      actorRole: adminRole,
+      ...auditContext,
+    },
+    parseInt(targetUserId), // Target user as entity
+    'Admin revoked user role'
+  );
 }

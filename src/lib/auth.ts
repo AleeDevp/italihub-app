@@ -1,12 +1,9 @@
-import { PrismaClient } from '@/generated/prisma';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { nextCookies } from 'better-auth/next-js';
 
-import { APIError } from 'better-auth/api';
+import { prisma } from './db';
 import { sendEmail } from './email/resend';
-
-const prisma = new PrismaClient();
 
 const baseURL: string | undefined =
   process.env.VERCEL === '1'
@@ -28,11 +25,18 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true,
     async sendResetPassword({ user, url }) {
+      // Send the reset email
       await sendEmail({
         from: 'reset',
         to: user.email,
         subject: 'Reset your password',
         text: `Click the following link to reset your password: ${url}`,
+      });
+
+      // Log password reset request
+      const { AuthAuditor } = await import('./audit');
+      await AuthAuditor.logPasswordResetRequest(user.email, user.id, {
+        email: user.email,
       });
     },
   },
@@ -73,7 +77,7 @@ export const auth = betterAuth({
       role: {
         type: 'string',
         required: false,
-        defaultValue: 'user',
+        defaultValue: 'USER',
         input: false, // don't allow user to set role
       },
       isProfileComplete: {
@@ -119,32 +123,31 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        before: async (user, ctx) => {
-          // Enforce email domain for all user creations (fixes bypass via Google)
-          if (!user.email.endsWith('.com')) {
-            throw new APIError('BAD_REQUEST', {
-              message: 'Email must end with .com',
-            });
-          }
-
-          // Optional: Add more checks, e.g., block disposable domains
-          // if (isDisposableEmail(user.email)) throw new APIError(...);
-          return { data: user };
-        },
-        after: async (user) => {
-          // Post-creation: Send welcome email or set defaults
-          // TODO: Integrate with email service (e.g., Resend or Nodemailer)
-          console.log('New user created:', user);
-          // await sendWelcomeEmail(user.email);
+        after: async (user: any) => {
+          // Import audit functions dynamically to avoid circular dependencies
+          const { AuthAuditor } = await import('./audit');
+          await AuthAuditor.logRegistrationSuccess(user.email, user.id, {
+            emailVerified: user.emailVerified,
+            provider: 'email',
+          });
         },
       },
     },
     session: {
       create: {
-        after: async (session) => {
-          // Your existing notification logic
-          // TODO: Send a notification (e.g., via webhook or email)
-          console.log('New session created:', session);
+        after: async (session: any) => {
+          const { AuthAuditor } = await import('./audit');
+          await AuthAuditor.logLoginSuccess(session.userId, session.id, {
+            provider: 'session',
+          });
+        },
+      },
+      delete: {
+        after: async (session: any) => {
+          const { AuthAuditor } = await import('./audit');
+          await AuthAuditor.logLogoutSuccess(session.userId, session.id, {
+            provider: 'session',
+          });
         },
       },
     },

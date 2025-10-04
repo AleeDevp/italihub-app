@@ -1,3 +1,5 @@
+import { Enum } from '@/lib/enums';
+
 export async function listRecentUserActivity(
   userId: string,
   limit = 20
@@ -15,10 +17,10 @@ export async function listRecentUserActivity(
   return [
     {
       createdAt: new Date(),
-      action: 'AD_CREATE',
-      entityType: 'AD',
+      action: Enum.AuditAction.AD_CREATE,
+      entityType: Enum.AuditEntityType.AD,
       entityId: 1,
-      outcome: 'SUCCESS',
+      outcome: Enum.AuditOutcome.SUCCESS,
     },
   ];
 }

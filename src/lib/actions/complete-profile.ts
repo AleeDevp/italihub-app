@@ -1,5 +1,8 @@
 'use server';
 
+import type { AuditAction, AuditActorRole, AuditEntityType } from '@/generated/enums';
+import { auditServerAction } from '@/lib/audit';
+import { getEnhancedAuditContext } from '@/lib/audit-context';
 import { requireUser } from '@/lib/auth';
 import { isUserIdAvailable } from '@/lib/dal/user';
 import { prisma } from '@/lib/db';
@@ -85,23 +88,42 @@ export async function completeProfileAction(formData: FormData): Promise<Complet
       newImageKey = uploadResult.data.storageKey; // Note: using storageKey instead of imageKey
     }
 
-    // Apply DB updates in a transaction. If it fails, try to rollback the new cloud asset.
+    // Apply DB updates with audit logging in a transaction
+    const auditContext = await getEnhancedAuditContext();
+
     try {
-      await prisma.$transaction(async (tx) => {
-        await tx.user.update({
-          where: { id: user.id },
-          data: {
-            name: values.name,
-            // userId maps to userId column (unique citext)
-            userId: values.userId,
-            telegramHandle: values.telegram || null,
-            image: newImageKey ?? undefined, // leave unchanged if null and not provided
-            cityId: city.id,
-            cityLastChangedAt: new Date(),
-            isProfileComplete: true,
-          },
-        });
-      });
+      const result = await auditServerAction(
+        'PROFILE_COMPLETE' as AuditAction,
+        'USER' as AuditEntityType,
+        async () => {
+          await prisma.$transaction(async (tx) => {
+            await tx.user.update({
+              where: { id: user.id },
+              data: {
+                name: values.name,
+                // userId maps to userId column (unique citext)
+                userId: values.userId,
+                telegramHandle: values.telegram || null,
+                image: newImageKey ?? undefined, // leave unchanged if null and not provided
+                cityId: city.id,
+                cityLastChangedAt: new Date(),
+                isProfileComplete: true,
+              },
+            });
+          });
+
+          return { success: true };
+        },
+        {
+          actorUserId: user.id,
+          actorRole: 'USER' as AuditActorRole,
+          ...auditContext,
+        },
+        undefined,
+        'User completed profile setup'
+      );
+
+      return { ok: true, data: { id: user.id } };
     } catch (e: any) {
       // Compensation: remove the just-uploaded image if DB write failed
       if (newImageKey) {
@@ -117,8 +139,6 @@ export async function completeProfileAction(formData: FormData): Promise<Complet
       const msg = e?.message || 'Failed to update profile';
       return { ok: false, error: msg };
     }
-
-    return { ok: true, data: { id: user.id } };
   } catch (e: any) {
     const msg = e?.message || 'Unexpected server error';
     return { ok: false, error: msg };

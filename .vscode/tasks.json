@@ -143,6 +143,13 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Typecheck - Next.js project",
+			"type": "shell",
+			"command": "npm run -s typecheck",
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

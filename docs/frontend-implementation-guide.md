@@ -36,7 +36,7 @@ This document outlines critical considerations for frontend implementation based
 - **City Cooldown**: Enforce 10-day cooldown on city changes in UI
 - **Profile Completion Gating**: Block certain features until profile is complete
 - **Telegram Handle**: Optional field for contact purposes (64 char limit)
-- **Role-Based Access**: Default "user" role with potential for admin/moderator roles
+- **Role-Based Access**: Default "USER" role with potential for admin/moderator roles
 
 ### User Model Specifics
 

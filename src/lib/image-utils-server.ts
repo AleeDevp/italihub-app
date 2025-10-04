@@ -5,26 +5,21 @@
  * and should never be imported on the client side.
  */
 
-import { v2 as cloudinary } from 'cloudinary';
+import { fileTypeFromBuffer } from 'file-type';
 import crypto from 'node:crypto';
-import type { ImageType, ServiceResult } from './image-utils-client';
+import type { ImageType } from './image-utils-client';
 import {
   handleServiceError,
   IMAGE_ERROR_MESSAGES,
   IMAGE_TYPE_CONFIGS,
   validateImageFile,
+  type ServiceResult,
 } from './image-utils-client';
+import type { UploadOptions } from './storage';
+import { getStorageProvider } from './storage';
 
-// =============================================================================
-// Configuration & Setup
-// =============================================================================
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
-  api_key: process.env.CLOUDINARY_API_KEY!,
-  api_secret: process.env.CLOUDINARY_API_SECRET!,
-  secure: true,
-});
+// Storage provider (configurable via environment)
+const storage = getStorageProvider();
 
 // =============================================================================
 // Server-Side Types
@@ -40,6 +35,7 @@ export interface ImageUploadResult {
   height: number;
   bytes: number;
   format: string;
+  mimeType: string; // normalized server-sniffed mime
   url: string; // Cloudinary URL
   secureUrl: string; // HTTPS Cloudinary URL
 }
@@ -58,60 +54,47 @@ async function uploadBufferToCloudinary(
 ): Promise<ImageUploadResult> {
   const config = IMAGE_TYPE_CONFIGS[imageType];
 
-  return new Promise((resolve, reject) => {
-    const uploadOptions: any = {
-      public_id: publicId,
-      resource_type: 'image',
-      overwrite: true,
-      folder: config.folder,
-      use_filename: false,
-      unique_filename: true,
-      quality_analysis: true,
-    };
+  // Always use image resource type since we only accept images now
+  const resourceType: UploadOptions['resourceType'] = 'image';
 
-    // Add type-specific transformations
-    if (config.dimensions) {
-      const transformation: Record<string, any> = {};
-
-      if (config.dimensions.width && config.dimensions.height) {
-        transformation.width = config.dimensions.width;
-        transformation.height = config.dimensions.height;
-        transformation.crop = 'fill';
-        transformation.gravity = 'face';
-      } else if (config.dimensions.width) {
-        transformation.width = config.dimensions.width;
-        transformation.crop = 'scale';
-      } else if (config.dimensions.height) {
-        transformation.height = config.dimensions.height;
-        transformation.crop = 'scale';
-      }
-
-      if (Object.keys(transformation).length > 0) {
-        uploadOptions.transformation = transformation;
-      }
+  // Add type-specific transformations
+  const transformation: Record<string, any> = {};
+  if (config.dimensions) {
+    if (config.dimensions.width && config.dimensions.height) {
+      transformation.width = config.dimensions.width;
+      transformation.height = config.dimensions.height;
+      transformation.crop = 'fill';
+      transformation.gravity = 'face';
+    } else if (config.dimensions.width) {
+      transformation.width = config.dimensions.width;
+      transformation.crop = 'scale';
+    } else if (config.dimensions.height) {
+      transformation.height = config.dimensions.height;
+      transformation.crop = 'scale';
     }
+  }
 
-    const stream = cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
-      if (error || !result) {
-        reject(error || new Error('Upload failed'));
-        return;
-      }
-
-      const storageKey = `${result.public_id}.${result.format}`;
-      resolve({
-        storageKey,
-        publicId: result.public_id,
-        width: result.width,
-        height: result.height,
-        bytes: result.bytes,
-        format: result.format,
-        url: result.url,
-        secureUrl: result.secure_url,
-      });
-    });
-
-    stream.end(buffer);
+  const start = Date.now();
+  const result = await storage.uploadBuffer(buffer, {
+    publicId,
+    folder: config.folder,
+    resourceType,
+    transformation: Object.keys(transformation).length ? transformation : undefined,
   });
+  const ms = Date.now() - start;
+  console.info('[image] upload', { imageType, publicId: result.publicId, bytes: result.bytes, ms });
+  return {
+    storageKey: result.storageKey,
+    publicId: result.publicId,
+    width: result.width ?? 0,
+    height: result.height ?? 0,
+    bytes: result.bytes ?? buffer.byteLength,
+    format: result.format ?? 'bin',
+    // will be overridden by caller with sniffed value
+    mimeType: 'application/octet-stream',
+    url: result.url,
+    secureUrl: result.secureUrl,
+  };
 }
 
 /**
@@ -133,13 +116,29 @@ export async function uploadImageToCloudinary(
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // 2.1 Server-side MIME verification (magic number sniffing)
+    const sniff = await fileTypeFromBuffer(buffer).catch(() => null);
+    const sniffedMime = sniff?.mime || file.type || '';
+    const allowed = (IMAGE_TYPE_CONFIGS[imageType].allowedMimeTypes as readonly string[]).includes(
+      sniffedMime as any
+    );
+    if (!allowed) {
+      throw new Error('Server-side MIME verification failed');
+    }
+
     // 3. Generate public ID with folder structure
     const config = IMAGE_TYPE_CONFIGS[imageType];
+    const hash = crypto.createHash('sha256').update(buffer).digest('hex').slice(0, 16);
     const uniqueId = crypto.randomUUID();
-    const publicId = `${config.folder}/${userId}/${uniqueId}`;
+    const publicId = buildPublicId(config.folder, userId, hash, uniqueId);
 
     // 4. Upload to Cloudinary
-    return await uploadBufferToCloudinary(buffer, publicId, imageType);
+    const uploaded = await uploadBufferToCloudinary(buffer, publicId, imageType);
+
+    // Image uploaded successfully
+
+    // Override with server-verified MIME type for security
+    return { ...uploaded, mimeType: sniffedMime };
   } catch (error: any) {
     const message = error?.message || IMAGE_ERROR_MESSAGES.UPLOAD_FAILED;
     throw new Error(message);
@@ -153,10 +152,9 @@ export async function deleteCloudinaryImage(storageKey: string): Promise<void> {
   try {
     if (!storageKey) return;
 
-    // Extract public ID (remove file extension)
-    const publicId = storageKey.replace(/\.[^.]+$/, '');
-
-    await cloudinary.uploader.destroy(publicId);
+    const start = Date.now();
+    await storage.deleteByStorageKey(storageKey);
+    console.info('[image] delete', { storageKey, ms: Date.now() - start });
   } catch (error) {
     // Log error but don't throw - deletion is often best-effort
     console.warn('Failed to delete image from Cloudinary:', error);
@@ -170,10 +168,62 @@ export async function bulkDeleteCloudinaryImages(storageKeys: string[]): Promise
   if (storageKeys.length === 0) return;
 
   try {
-    const publicIds = storageKeys.map((key) => key.replace(/\.[^.]+$/, ''));
-    await cloudinary.api.delete_resources(publicIds);
+    const start = Date.now();
+    await storage.deleteManyByStorageKeys(storageKeys);
+    console.info('[image] bulk delete', { count: storageKeys.length, ms: Date.now() - start });
   } catch (error) {
     console.warn('Failed to bulk delete images from Cloudinary:', error);
+  }
+}
+
+// =============================================================================
+// Helpers: Signed URL for private access
+// =============================================================================
+
+/**
+ * Generate a signed URL (short TTL implied via CDN config). Useful for private assets.
+ * Note: Requires Cloudinary to be configured for authenticated delivery.
+ */
+export function getSignedUrl(storageKey: string, options?: { resourceType?: 'image' | 'raw' }) {
+  return storage.getSignedUrl?.(storageKey, options) ?? null;
+}
+
+// Pure helper to build a publicId from parts (easy to unit test)
+export function buildPublicId(folder: string, userId: string, hash: string, uniqueId: string) {
+  return `${folder}/${userId}/${hash}-${uniqueId}`;
+}
+
+// Produce a DB-ready file record from an upload result (uses normalized mime)
+export function toDbFileRecord(upload: ImageUploadResult) {
+  return {
+    storageKey: upload.storageKey,
+    mimeType: upload.mimeType,
+    bytes: upload.bytes,
+  } as const;
+}
+
+// Derive a safe MIME type from a trusted storageKey extension (post-upload)
+export function mimeFromStorageKey(storageKey: string): string {
+  const ext = storageKey.split('.').pop()?.toLowerCase() || '';
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'avif':
+      return 'image/avif';
+    case 'gif':
+      return 'image/gif';
+    case 'tiff':
+    case 'tif':
+      return 'image/tiff';
+    case 'svg':
+      return 'image/svg+xml';
+    default:
+      return 'application/octet-stream';
   }
 }
 
@@ -362,7 +412,25 @@ export class ContentImageService extends ImageService {
   }
 }
 
-// Export cloudinary instance for advanced usage
-export { cloudinary };
+/**
+ * Verification Image Service
+ * - Accepts only images for verification documents
+ * - No aggressive transformations to keep text legible
+ */
+export class VerificationImageService extends ImageService {
+  static async uploadVerificationFile(
+    file: File,
+    userId: string
+  ): Promise<ServiceResult<ImageUploadResult>> {
+    return ImageService.uploadImage(file, userId, 'verification');
+  }
+
+  static async uploadMultipleVerificationFiles(
+    files: File[],
+    userId: string
+  ): Promise<ServiceResult<ImageUploadResult[]>> {
+    return ImageService.batchUploadImages(files, userId, 'verification');
+  }
+}
 
 // All services are already exported above

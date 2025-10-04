@@ -11,7 +11,7 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
     unauthorized();
   }
 
-  if (user!.role !== 'admin') forbidden();
+  if (user.role === 'USER') forbidden();
 
   return (
     <div className={cn('min-h-screen ')}>

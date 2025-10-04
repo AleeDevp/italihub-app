@@ -5,6 +5,7 @@ import localFont from 'next/font/local';
 
 import { CitiesProvider } from '@/contexts/cities-context';
 import { getAllCities } from '@/lib/cache/city-cache';
+import { QueryProvider } from '@/providers/query-provider';
 import './globals.css';
 
 // Define the Fredoka font (variable font support is automatic)
@@ -45,10 +46,12 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         > */}
-        <CitiesProvider cities={cities} storageMode="session">
-          {children}
-        </CitiesProvider>
-        <Toaster />
+        <QueryProvider>
+          <CitiesProvider cities={cities} storageMode="session">
+            {children}
+          </CitiesProvider>
+        </QueryProvider>
+        <Toaster position="top-center" />
         {/* </ThemeProvider> */}
       </body>
     </html>

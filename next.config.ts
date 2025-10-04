@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     authInterrupts: true,
+    serverActions: {
+      bodySizeLimit: '10mb', // Increased from default 1mb to allow larger file uploads
+    },
   },
   /* config options here */
 };

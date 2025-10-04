@@ -2,8 +2,8 @@ import { StatusBadge } from '@/components/dashboard/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import type { AdStatus } from '@/generated/prisma';
 import { listUserAds, UserAdListParams } from '@/lib/dal/ads';
+import type { AdStatus } from '@/lib/enums';
 import {
   Calendar,
   Edit,

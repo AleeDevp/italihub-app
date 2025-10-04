@@ -9,9 +9,22 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+// Generate tiny, client-safe enum exports for use in client components
+generator enum {
+  provider = "prisma-generator-enum"
+  // Write a single TypeScript module we can import on both server and client
+  output   = "../src/generated/enums.ts"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
 }
 
 model User {
@@ -21,10 +34,10 @@ model User {
   emailVerified Boolean @default(false)
   image         String? @db.VarChar(512)
 
-  role              String  @default("user")
+  role              UserRole  @default(USER)
   isProfileComplete Boolean @default(false)
 
-  userId String? @unique @db.Citext // Enable the citext extension in your Postgres database manually //CREATE EXTENSION IF NOT EXISTS citext;
+  userId String? @unique
 
   telegramHandle String? @db.VarChar(64)
 
@@ -337,8 +350,8 @@ enum VerificationStatus {
 }
 
 enum VerificationFileRole {
+  IMAGE
   DOCUMENT
-  SELFIE
   OTHER
 }
 
@@ -1074,20 +1087,142 @@ enum AuditActorRole {
 }
 
 enum AuditEntityType {
+  // Ads (parent + per-category)
   AD
   AD_HOUSING
   AD_TRANSPORTATION
   AD_MARKETPLACE
   AD_SERVICE
   AD_EXCHANGE
-  PROFILE
+
+  // Identity & moderation-related
+  USER
+  MODERATION_ACTION
+
+  // Verification
   VERIFICATION_REQUEST
+  VERIFICATION_FILE
+
+  // Reports
   AD_REPORT
+  REPORT_FILE
+
+  // Messaging / broadcast
   ANNOUNCEMENT
   NOTIFICATION
+
+  // Policies & consent (tables exist)
+  POSTING_POLICY
+  POLICY_ACCEPTANCE
+
+  // Media & system
   MEDIA_ASSET
   CITY
   OTHER
+}
+
+// ✅ All mutation/decision points worth logging (stable uppercase snake-case)
+enum AuditAction {
+  // Auth & account
+  REGISTER
+  LOGIN
+  LOGOUT
+  PASSWORD_RESET_REQUEST
+  PASSWORD_RESET_CONFIRM
+  PASSWORD_CHANGE
+  EMAIL_CHANGE_REQUEST
+  EMAIL_CHANGE_CONFIRM
+  OAUTH_LINK_GOOGLE
+  OAUTH_UNLINK_GOOGLE
+  OAUTH_LINK_FACEBOOK
+  OAUTH_UNLINK_FACEBOOK
+  SESSION_REVOKE_ALL
+  ACCOUNT_DELETE_REQUEST
+  ACCOUNT_DELETE
+
+  // Profile
+  PROFILE_COMPLETE
+  PROFILE_EDIT
+  PROFILE_NAME_EDIT
+  PROFILE_USERID_EDIT
+  PROFILE_TELEGRAMID_EDIT
+  PROFILE_PHOTO_CHANGE
+  PROFILE_PHOTO_DELETE
+  CITY_CHANGE
+  ROLE_ASSIGN
+  ROLE_REVOKE
+
+  // Verification (sensitive)
+  VERIFICATION_SUBMIT
+  VERIFICATION_FILE_UPLOAD
+  VERIFICATION_FILE_DELETE
+  VERIFICATION_APPROVE
+  VERIFICATION_REJECT
+  VERIFICATION_REVOKE
+  VERIFICATION_ACCESS // moderator/system viewed private docs
+
+  // Ads — owner actions
+  AD_CREATE
+  AD_EDIT
+  AD_RENEW
+  AD_DELETE
+  AD_SUBMIT_FOR_REVIEW
+  AD_MEDIA_UPLOAD
+  AD_MEDIA_DELETE
+  AD_MEDIA_REORDER
+  AD_COVER_SET
+  AD_CONTACT_REVEAL
+
+  // Ads — moderation/status
+  AD_APPROVE
+  AD_REJECT
+  AD_EXPIRE
+  AD_RESTORE
+  AD_STATUS_SET
+
+  // Reports
+  REPORT_SUBMIT
+  REPORT_FILE_UPLOAD
+  REPORT_FILE_DELETE
+  REPORT_FLAG
+  REPORT_UNFLAG
+  REPORT_CLOSE
+  REPORT_DISMISS
+
+  // Notifications & announcements
+  NOTIFICATION_CREATE
+  NOTIFICATION_MARK_READ
+  NOTIFICATION_MARK_ALL_READ
+  ANNOUNCEMENT_CREATE
+  ANNOUNCEMENT_UPDATE
+  ANNOUNCEMENT_DELETE
+  ANNOUNCEMENT_PIN
+  ANNOUNCEMENT_UNPIN
+  ANNOUNCEMENT_DISMISS
+
+  // Policies (lifecycle + consent)
+  POLICY_CREATE
+  POLICY_UPDATE
+  POLICY_RETIRE
+  POLICY_ACCEPT
+
+  // Cities (admin)
+  CITY_CREATE
+  CITY_UPDATE
+  CITY_ENABLE
+  CITY_DISABLE
+  CITY_SORT_UPDATE
+
+  // Email & support
+  EMAIL_SEND
+  SUPPORT_MESSAGE_SEND
+
+  // System jobs & maintenance
+  SCHEDULER_EXPIRE_ADS
+  METRICS_ROLLUP
+  CLEANUP_ORPHAN_MEDIA
+  MIGRATION_RUN
+  BATCH_CLEANUP
 }
 
 model AuditLog {
@@ -1098,7 +1233,7 @@ model AuditLog {
   actorRole       AuditActorRole? // snapshot of role at action time
 
   // WHAT
-  action          String          @db.VarChar(64)   // e.g., "AD_CREATE", "AD_EDIT", "LOGIN", "VERIFY_APPROVE"
+  action          AuditAction         
   outcome         AuditOutcome
   errorCode       String?         @db.VarChar(64)   // optional short code on FAILURE
 
@@ -1110,7 +1245,7 @@ model AuditLog {
   requestId       String?         @db.VarChar(64)    // correlation id for a single HTTP request
   sessionId       String?         @db.VarChar(64)
   ip              String?         @db.VarChar(45)    // IPv4/IPv6
-  userAgent       String?         @db.VarChar(255)
+  userAgent       String?         @db.VarChar(512)
 
   // DETAILS (sanitized)
   metadata        Json?           // e.g., { "diff": {...}, "payload": {...} } (NO secrets/PII)

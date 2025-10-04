@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import type { AdStatus } from '@/generated/prisma';
+import type { AdStatus } from '@/lib/enums';
 
 interface StatusBadgeProps {
   status: AdStatus;

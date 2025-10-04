@@ -5,6 +5,8 @@
  * Server-side operations (Cloudinary upload/delete) are in separate server-only files.
  */
 
+import type { VerificationFileRole } from '@/lib/enums';
+import { Enum } from '@/lib/enums';
 import { z } from 'zod';
 
 // =============================================================================
@@ -22,7 +24,8 @@ export type ImageType =
   | 'content' // Content images - blog posts, articles
   | 'background' // Background images - large, optimized
   | 'icon' // Icons and logos - small, crisp
-  | 'banner'; // Banner images - wide, medium quality
+  | 'banner' // Banner images - wide, medium quality
+  | 'verification'; // User verification documents/images
 
 /**
  * Image configuration for different types
@@ -102,6 +105,14 @@ export const IMAGE_TYPE_CONFIGS: Record<ImageType, ImageTypeConfig> = {
     dimensions: { width: 1200, height: 300, aspectRatio: '4:1' },
     quality: 75,
     folder: 'banners',
+  },
+  verification: {
+    maxSizeBytes: 8 * 1024 * 1024, // 8MB
+    // Accept only images for verification documents
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const,
+    // No forced dimensions; keep originals to preserve text clarity
+    quality: 90,
+    folder: 'verification',
   },
 };
 
@@ -283,22 +294,24 @@ export function getFileExtension(filename: string): string {
 }
 
 /**
- * Detect image type from file
+ * Detect file type (by MIME) and return a simple extension keyword
+ * - Returns common image extensions (jpg, png, webp, avif, gif, tiff, svg)
+ * - Returns 'unknown' for anything else
  */
-export function detectImageType(file: File): string {
-  // Simple MIME type to extension mapping
-  const mimeToExt: Record<string, string> = {
-    'image/jpeg': 'jpg',
-    'image/jpg': 'jpg',
-    'image/png': 'png',
-    'image/webp': 'webp',
-    'image/avif': 'avif',
-    'image/gif': 'gif',
-    'image/tiff': 'tiff',
-    'image/svg+xml': 'svg',
-  };
-
-  return mimeToExt[file.type] || 'jpg';
+export function detectFileType(input: File | { type?: string } | string): string {
+  const mime = typeof input === 'string' ? input : input?.type || '';
+  if (!mime) return 'unknown';
+  if (mime.startsWith('image/')) {
+    if (mime.includes('jpeg') || mime.endsWith('/jpg')) return 'jpg';
+    if (mime.endsWith('/png')) return 'png';
+    if (mime.endsWith('/webp')) return 'webp';
+    if (mime.endsWith('/avif')) return 'avif';
+    if (mime.endsWith('/gif')) return 'gif';
+    if (mime.endsWith('/tiff')) return 'tiff';
+    if (mime === 'image/svg+xml') return 'svg';
+    return 'unknown';
+  }
+  return 'unknown';
 }
 
 // =============================================================================
@@ -538,6 +551,23 @@ export function serviceToActionResult<T>(result: ServiceResult<T>): ActionResult
 // =============================================================================
 // Legacy Support & Aliases
 // =============================================================================
+
+/**
+ * Classify a verification upload into IMAGE, DOCUMENT, or OTHER based on MIME type.
+ * - IMAGE: any "image/*" MIME (all verification files are now images)
+ * - DOCUMENT: for non-selfie verification methods (ID cards, permits, etc.)
+ * - OTHER: anything else (should not occur with proper validation)
+ */
+export function classifyVerificationFileRole(
+  input: File | { type?: string } | string
+): VerificationFileRole {
+  const type = detectFileType(input);
+
+  if (['jpg', 'png', 'webp', 'avif', 'gif', 'tiff', 'svg'].includes(type)) {
+    return Enum.VerificationFileRole.IMAGE;
+  }
+  return Enum.VerificationFileRole.OTHER;
+}
 
 // Maintain backward compatibility with existing code
 export const formatBytes = formatFileSize;
