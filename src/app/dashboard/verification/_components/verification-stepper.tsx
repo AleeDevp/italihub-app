@@ -5,75 +5,47 @@ type VerificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null;
 
 interface VerificationStepperProps {
   verificationStatus: VerificationStatus;
-  hasSubmittedVerification: boolean;
 }
 
-export function VerificationStepper({
-  verificationStatus,
-  hasSubmittedVerification,
-}: VerificationStepperProps) {
-  // Determine current step based on verification status
-  const getCurrentStep = () => {
-    if (!hasSubmittedVerification) return 1;
-    if (verificationStatus === 'PENDING') return 2;
-    if (verificationStatus === 'APPROVED' || verificationStatus === 'REJECTED') return 3;
-    return 1;
-  };
-
-  const currentStep = getCurrentStep();
+export function VerificationStepper({ verificationStatus }: VerificationStepperProps) {
+  const isSubmitted = verificationStatus !== null;
+  const isPending = verificationStatus === 'PENDING';
+  const isResult = verificationStatus === 'APPROVED' || verificationStatus === 'REJECTED';
+  const resultColor = verificationStatus === 'APPROVED' ? 'bg-green-500' : 'bg-red-500';
 
   return (
     <div className="pt-4">
-      {/* isolate creates a new stacking context to make z-index layering consistent across browsers */}
-      <div className="flex justify-between items-start w-full relative isolate">
-        {/* Progress line background */}
-        <div
-          className="absolute top-6 left-0 right-0 h-1 bg-gray-200 rounded-full z-0 pointer-events-none"
-          aria-hidden
-        />
-        {/* Progress line - first segment */}
-        <div
-          className={cn(
-            'absolute top-6 left-0 h-1 rounded-full z-0 transition-all duration-500 pointer-events-none',
-            hasSubmittedVerification ? 'w-1/2 bg-gradient-to-r from-blue-500 to-amber-500' : 'w-0'
-          )}
-          aria-hidden
-        />
-        {/* Progress line - second segment */}
-        <div
-          className={cn(
-            'absolute top-6 left-1/2 h-1 rounded-full z-0 transition-all duration-500 pointer-events-none',
-            verificationStatus === 'APPROVED'
-              ? 'w-1/2 bg-gradient-to-r from-amber-500 to-green-500'
-              : verificationStatus === 'REJECTED'
-                ? 'w-1/2 bg-gradient-to-r from-amber-500 to-red-500'
-                : verificationStatus === 'PENDING'
-                  ? 'w-1/2 bg-amber-500'
-                  : 'w-0'
-          )}
-          aria-hidden
-        />
-
+      {/* Using per-step connectors ensures precise segment colors */}
+      <div className="flex items-start w-full relative">
         {/* Step 1: Submit */}
-        <div className="flex flex-col items-center flex-1 z-10 relative">
+        <div className="flex flex-col items-center flex-1 relative">
+          {/* Left connector (left of Submit) - always blue since Submit is enabled */}
+          <div
+            className={cn('absolute top-6 left-0 right-1/2 h-1 rounded-full', 'bg-blue-500')}
+            aria-hidden
+          />
+          {/* Right connector (between Submit and Review) */}
+          <div
+            className={cn(
+              'absolute top-6 left-1/2 right-0 h-1',
+              isPending || isResult ? 'bg-amber-500' : 'bg-gray-200'
+            )}
+            aria-hidden
+          />
           <div
             className={cn(
               'w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg transition-all duration-300 transform relative z-20',
               'bg-gradient-to-br from-blue-500 to-blue-600 ring-4 ring-blue-100',
-              hasSubmittedVerification && 'scale-110 shadow-xl'
+              isSubmitted && 'scale-110 shadow-xl'
             )}
           >
-            {hasSubmittedVerification ? (
-              <CheckCircle2 className="h-5 w-5" />
-            ) : (
-              <Send className="h-5 w-5" />
-            )}
+            {isSubmitted ? <CheckCircle2 className="h-5 w-5" /> : <Send className="h-5 w-5" />}
           </div>
           <div className="mt-3 text-center">
             <div
               className={cn(
                 'text-sm font-semibold',
-                hasSubmittedVerification ? 'text-blue-700' : 'text-blue-600'
+                isSubmitted ? 'text-blue-700' : 'text-blue-600'
               )}
             >
               Submit
@@ -83,15 +55,29 @@ export function VerificationStepper({
         </div>
 
         {/* Step 2: Review */}
-        <div className="flex flex-col items-center flex-1 z-10 relative">
+        <div className="flex flex-col items-center flex-1 relative">
+          {/* Left connector (between Submit and Review) */}
+          <div
+            className={cn(
+              'absolute top-6 left-0 right-1/2 h-1',
+              isPending || isResult ? 'bg-amber-500' : 'bg-gray-200'
+            )}
+            aria-hidden
+          />
+          {/* Right connector (between Review and Result) */}
+          <div
+            className={cn(
+              'absolute top-6 left-1/2 right-0 h-1',
+              isResult ? resultColor : 'bg-gray-200'
+            )}
+            aria-hidden
+          />
           <div
             className={cn(
               'w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shadow-lg  relative z-20',
-              verificationStatus === 'PENDING'
+              isPending || isResult
                 ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white ring-4 ring-amber-100 scale-110 shadow-xl'
-                : verificationStatus === 'APPROVED' || verificationStatus === 'REJECTED'
-                  ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white ring-4 ring-amber-100 scale-110 shadow-xl'
-                  : 'bg-gray-200 text-gray-500 ring-4 ring-gray-100'
+                : 'bg-gray-200 text-gray-500 ring-4 ring-gray-100'
             )}
           >
             {verificationStatus === 'PENDING' ? (
@@ -106,11 +92,7 @@ export function VerificationStepper({
             <div
               className={cn(
                 'text-sm font-semibold',
-                verificationStatus === 'PENDING'
-                  ? 'text-amber-700'
-                  : verificationStatus === 'APPROVED' || verificationStatus === 'REJECTED'
-                    ? 'text-amber-700'
-                    : 'text-gray-500'
+                isPending || isResult ? 'text-amber-700' : 'text-gray-500'
               )}
             >
               Review
@@ -122,7 +104,23 @@ export function VerificationStepper({
         </div>
 
         {/* Step 3: Result */}
-        <div className="flex flex-col items-center flex-1 z-10 relative">
+        <div className="flex flex-col items-center flex-1 relative">
+          {/* Left connector (between Review and Result) */}
+          <div
+            className={cn(
+              'absolute top-6 left-0 right-1/2 h-1 ',
+              isResult ? resultColor : 'bg-gray-200'
+            )}
+            aria-hidden
+          />
+          {/* Right connector (after Result) */}
+          <div
+            className={cn(
+              'absolute top-6 left-1/2 right-0 h-1 rounded-full',
+              isResult ? resultColor : 'bg-gray-200'
+            )}
+            aria-hidden
+          />
           <div
             className={cn(
               'w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shadow-lg transition-all duration-300 transform relative z-20',

@@ -11,9 +11,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { useCityName } from '@/contexts/cities-context';
 import type { VerificationMethod, VerificationStatus } from '@/generated/prisma';
 import { Enum, humanize } from '@/lib/enums';
 import { resolveImageUrl } from '@/lib/image-utils-client';
+import { cn } from '@/lib/utils';
 import {
   AlertCircle,
   Calendar,
@@ -75,13 +77,13 @@ export function VerificationLayout({
   const getStatusIcon = (s: VerificationStatus | undefined) => {
     switch (s) {
       case Enum.VerificationStatus.APPROVED:
-        return <ShieldCheck className="h-5 w-5 text-green-500" />;
+        return <ShieldCheck className="h-6 w-6 text-green-500" />;
       case Enum.VerificationStatus.PENDING:
-        return <Clock className="h-5 w-5 text-yellow-500" />;
+        return <Clock className="h-6 w-6 text-yellow-500" />;
       case Enum.VerificationStatus.REJECTED:
-        return <ShieldAlert className="h-5 w-5 text-red-500" />;
+        return <ShieldAlert className="h-6 w-6 text-red-500" />;
       default:
-        return <Shield className="h-5 w-5 text-gray-500" />;
+        return <Shield className="h-6 w-6 text-gray-500" />;
     }
   };
 
@@ -109,6 +111,7 @@ export function VerificationLayout({
   };
 
   const canSubmitVerification = !latestVerification || status === Enum.VerificationStatus.REJECTED;
+  const isRejected = status === Enum.VerificationStatus.REJECTED;
   const isPending = status === Enum.VerificationStatus.PENDING;
   const isVerified = status === Enum.VerificationStatus.APPROVED;
 
@@ -175,10 +178,7 @@ export function VerificationLayout({
                 Verification process
               </CardTitle>
               {/* Verification Steps Indicator */}
-              <VerificationStepper
-                verificationStatus={latestVerification?.status || null}
-                hasSubmittedVerification={!!latestVerification}
-              />
+              <VerificationStepper verificationStatus={latestVerification?.status || null} />
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Current Status Section */}
@@ -325,35 +325,67 @@ export function VerificationLayout({
                   {verificationHistory.map((item, index) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
+                      className="relative flex-col  items-center justify-between p-4 border rounded-lg"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="p-2 rounded-full bg-primary/10">
+                        <div className="p-2 rounded-full bg-background inset-shadow-sm">
                           {getStatusIcon(item.status)}
                         </div>
-                        <div>
-                          <h4 className="font-medium">{humanize(item.method)}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Submitted on {formatDate(item.submittedAt)}
-                          </p>
-                          {item.reviewedAt && (
-                            <p className="text-sm text-muted-foreground">
-                              Reviewed on {formatDate(item.reviewedAt)}
+
+                        <div className="space-y-2">
+                          <div>
+                            <h4 className="font-medium">{useCityName(item.cityId)}</h4>
+                            <h3>{humanize(item.method)}</h3>
+                          </div>
+
+                          <div className="mt-2 flex flex-wrap text-neutral-400 space-x-4 space-y-2 ">
+                            <p className="text-xs">
+                              Submitted on <br /> {formatDate(item.submittedAt)}
                             </p>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {item.filesCount} file{item.filesCount !== 1 ? 's' : ''} uploaded
-                          </p>
+                            {item.reviewedAt && (
+                              <p className="text-xs">
+                                Reviewed on <br /> {formatDate(item.reviewedAt)}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      {item.status === 'REJECTED' && (item.rejectionCode || item.rejectionNote) && (
+                        <div className="mt-3 rounded-md border border-red-200/70 bg-red-50/70 p-3 md:p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5 rounded-full bg-red-100 p-1.5">
+                              <ShieldAlert className="h-4 w-4 text-red-600" />
+                            </div>
+                            <div className="w-full">
+                              <p className="text-sm font-medium text-red-800">Rejection details</p>
+                              <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                {item.rejectionCode && (
+                                  <div className="space-y-1">
+                                    <p className="text-xs text-red-700/80">Code</p>
+                                    <span className="inline-flex items-center rounded-full border border-red-200 bg-red-100 px-2 py-1 text-xs font-medium text-red-800">
+                                      {item.rejectionCode}
+                                    </span>
+                                  </div>
+                                )}
+                                {item.rejectionNote && (
+                                  <div className="space-y-1">
+                                    <p className="text-xs text-red-700/80">Moderator note</p>
+                                    <p className="whitespace-pre-line break-words text-sm text-red-700">
+                                      {item.rejectionNote}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <div className="flex items-center gap-3">
-                        <Badge className={getStatusColor(item.status)}>
+                        <Badge
+                          className={cn(getStatusColor(item.status), 'absolute right-4 top-4')}
+                        >
                           {humanize(item.status)}
                         </Badge>
-                        {/* <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button> */}
                       </div>
                     </div>
                   ))}

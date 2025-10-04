@@ -43,9 +43,9 @@ export function Breadcrumbs({ className }: Props) {
     <Breadcrumb className={className}>
       <BreadcrumbList aria-label="Breadcrumb">
         {items.map((item, idx) => (
-          <div key={item.href} className="flex items-center space-x-3">
+          <div key={item.href} className="flex items-center space-x-2 ">
             {idx > 0 && <BreadcrumbSeparator />}
-            <BreadcrumbItem>
+            <BreadcrumbItem className="text-xs md:text-base">
               {item.isActive ? (
                 <>
                   {item.label === 'Home' && <Home className="size-4" />}
@@ -54,7 +54,7 @@ export function Breadcrumbs({ className }: Props) {
               ) : (
                 <BreadcrumbLink asChild>
                   <Link href={item.href} className="flex items-center gap-1">
-                    {item.label === 'Home' && <Home className=" size-4" />}
+                    {item.label === 'Home' && <Home className="size-3 md:size-4" />}
                     {item.label}
                   </Link>
                 </BreadcrumbLink>

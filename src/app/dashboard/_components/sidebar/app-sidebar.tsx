@@ -26,7 +26,6 @@ import { NavActivity } from './nav-activity';
 import { NavAdsManagement } from './nav-ads-management';
 import { NavMain } from './nav-main';
 import { NavOthers } from './nav-others';
-import { NavUser } from './nav-user';
 // This is sample data.
 const data = {
   navMain: [
@@ -108,15 +107,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavActivity items={data.navActivity} />
         <NavOthers items={data.navOthers} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser
-          user={{
-            name: 'Ali',
-            email: 'ali@example.com',
-            avatar: 'https://i.pravatar.cc/150?img=3',
-          }}
-        />
-      </SidebarFooter>
+      <SidebarFooter></SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

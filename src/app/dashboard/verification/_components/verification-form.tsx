@@ -12,8 +12,10 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { useCityById } from '@/contexts/cities-context';
 import type { VerificationFileRole, VerificationMethod } from '@/generated/prisma';
 import { submitVerificationRequestAction } from '@/lib/actions/verification-actions';
+import { useSession } from '@/lib/auth-client';
 import { Enum } from '@/lib/enums';
 import { Upload } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
@@ -73,6 +75,9 @@ export function VerificationForm({ onSuccess }: VerificationFormProps) {
   const [userNote, setUserNote] = useState('');
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const session = useSession();
+  const userCity = useCityById(session.data?.user?.cityId) || null;
 
   const handleFileChange = useCallback((file: UploadedFile | null) => {
     setUploadedFile(file);
@@ -153,37 +158,33 @@ export function VerificationForm({ onSuccess }: VerificationFormProps) {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Verification Method Selection */}
-          <div className="space-y-3">
-            <Label htmlFor="method">Verification Method</Label>
-            <Select
-              value={selectedMethod}
-              onValueChange={(value) => setSelectedMethod(value as VerificationMethod)}
-              disabled={isSubmitting}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select verification method" />
-              </SelectTrigger>
-              <SelectContent>
-                {VERIFICATION_METHODS.map((method) => (
-                  <SelectItem key={method.value} value={method.value}>
-                    <div>
-                      <div className="font-medium">{method.label}</div>
-                      <div className="text-xs text-muted-foreground">{method.description}</div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* {selectedMethodInfo && (
-              <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-blue-800">
-                  <p className="font-medium">Selected: {selectedMethodInfo.label}</p>
-                  <p>{selectedMethodInfo.description}</p>
-                </div>
-              </div>
-            )} */}
+          <div className="flex flex-wrap gap-4">
+            <div className="space-y-3 flex-2">
+              <Label htmlFor="method">Verification Method</Label>
+              <Select
+                value={selectedMethod}
+                onValueChange={(value) => setSelectedMethod(value as VerificationMethod)}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger className="py-5 text-start">
+                  <SelectValue placeholder="Select verification method" />
+                </SelectTrigger>
+                <SelectContent className="p-2">
+                  {VERIFICATION_METHODS.map((method) => (
+                    <SelectItem key={method.value} value={method.value}>
+                      <div>
+                        <div className="font-medium">{method.label}</div>
+                        <div className="text-xs text-muted-foreground">{method.description}</div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1 space-y-3 ">
+              <Label>For City</Label>
+              <p className="text-foreground font-semibold pl-2 border-l-1">{userCity?.name}</p>
+            </div>
           </div>
 
           <Separator />
