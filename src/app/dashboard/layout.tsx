@@ -1,4 +1,5 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -18,13 +19,12 @@ export default async function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await requireUser();
-  if (!user) unauthorized();
-
-  // Read sidebar cookie on the server to set the initial state and avoid hydration flicker
-  // const cookieStore = await cookies();
-  // const sidebarCookie = cookieStore.get('sidebar_state')?.value;
-  // const defaultOpen = sidebarCookie ? sidebarCookie === 'true' : true;
+  let user;
+  try {
+    user = await requireUser();
+  } catch {
+    unauthorized();
+  }
 
   return (
     <div className="">
@@ -45,10 +45,7 @@ export default async function DashboardLayout({
                 </div>
                 <div className="flex items-center gap-2">
                   <div className=" hidden md:flex justify-end gap-2">
-                    <Button variant="outline" size="sm" className="shadow-none">
-                      Notifications
-                      <Bell />
-                    </Button>
+                    <NotificationBell />
                   </div>
                   <UserDropDownMenu user={user} />
                 </div>

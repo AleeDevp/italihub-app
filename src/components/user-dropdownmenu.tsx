@@ -7,27 +7,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { signOut } from '@/lib/actions/auth-actions';
 import { User } from '@/lib/auth';
 // import { signOut } from '@/lib/auth-client';
 import { LogOut, Settings, ShieldUser, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from 'sonner';
 import { UserAvatar } from './user-avatar';
+
+import { authClient } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
 
 type Props = {
   user: User;
 };
 
 export function UserDropDownMenu({ user }: Props) {
+  const router = useRouter();
+
   const handleLogout = async () => {
-    try {
-      await signOut();
-      toast.success('Logged out successfully');
-    } catch (error) {
-      console.error('Error logging out:', error);
-      toast.error('Error logging out, please try again.');
-    }
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push('/'); // Redirect to your desired page (e.g., login or home)
+        },
+      },
+    });
   };
 
   const name = user.name ?? 'User';

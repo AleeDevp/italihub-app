@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { useCityName } from '@/contexts/cities-context';
+import { useCities } from '@/contexts/cities-context';
 import type { VerificationMethod, VerificationStatus } from '@/generated/prisma';
 import { Enum, humanize } from '@/lib/enums';
 import { resolveImageUrl } from '@/lib/image-utils-client';
@@ -60,6 +60,15 @@ export function VerificationLayout({
   verificationHistory,
 }: VerificationLayoutProps) {
   const router = useRouter();
+  const cities = useCities();
+  const getCityName = useCallback(
+    (id?: number | null) => {
+      if (!id) return '';
+      const c = cities.find((x) => x.id === id);
+      return c?.name ?? '';
+    },
+    [cities]
+  );
   const [isViewingDocuments, setIsViewingDocuments] = useState(false);
   const [storageKey, setStorageKey] = useState<string | null>(null);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
@@ -334,7 +343,7 @@ export function VerificationLayout({
 
                         <div className="space-y-2">
                           <div>
-                            <h4 className="font-medium">{useCityName(item.cityId)}</h4>
+                            <h4 className="font-medium">{getCityName(item.cityId)}</h4>
                             <h3>{humanize(item.method)}</h3>
                           </div>
 

@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 
 import { CitiesProvider } from '@/contexts/cities-context';
+import { NotificationProvider } from '@/contexts/notification-context';
 import { getAllCities } from '@/lib/cache/city-cache';
 import { QueryProvider } from '@/providers/query-provider';
 import './globals.css';
@@ -47,9 +48,11 @@ export default async function RootLayout({
           disableTransitionOnChange
         > */}
         <QueryProvider>
-          <CitiesProvider cities={cities} storageMode="session">
-            {children}
-          </CitiesProvider>
+          <NotificationProvider>
+            <CitiesProvider cities={cities} storageMode="session">
+              {children}
+            </CitiesProvider>
+          </NotificationProvider>
         </QueryProvider>
         <Toaster position="top-center" />
         {/* </ThemeProvider> */}

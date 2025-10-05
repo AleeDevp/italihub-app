@@ -18,6 +18,7 @@ import type {
 import { auditServerAction, logFailure, logSuccess } from '@/lib/audit';
 import { getEnhancedAuditContext } from '@/lib/audit-context';
 import { prisma } from '@/lib/db';
+import { createNotification } from '@/lib/services/notification-service';
 
 // =============================================================================
 // Types for Moderator Operations
@@ -468,6 +469,17 @@ export async function moderatorApproveVerification(
           },
         });
       });
+      // After DB updates succeed, create a notification to the user
+      await createNotification({
+        userId: request.userId,
+        type: 'VERIFICATION_EVENT',
+        severity: 'SUCCESS',
+        title: 'Verification approved',
+        body: 'Your verification request has been approved. You are now verified.',
+        verificationId: requestId,
+        deepLink: null,
+        data: { method: request.method, cityId: request.cityId },
+      });
 
       return;
     },
@@ -513,7 +525,7 @@ export async function moderatorRejectVerification(
         throw new Error('Can only reject pending verification requests');
       }
 
-      await prisma.verificationRequest.update({
+      const updated = await prisma.verificationRequest.update({
         where: { id: requestId },
         data: {
           status: 'REJECTED',
@@ -522,6 +534,39 @@ export async function moderatorRejectVerification(
           rejectionCode: rejectionData.rejectionCode,
           rejectionNote: rejectionData.rejectionNote,
         },
+      });
+
+      // Helper to humanize rejection codes for user-facing text
+      const humanizeRejectionCode = (code?: VerificationRejectionCode) => {
+        switch (code) {
+          case 'INSUFFICIENT_PROOF':
+            return 'Insufficient Proof';
+          case 'CITY_MISMATCH':
+            return 'City Mismatch';
+          case 'EXPIRED_DOCUMENT':
+            return 'Expired Document';
+          case 'UNREADABLE':
+            return 'Unreadable Document';
+          case 'OTHER':
+            return 'Other Reason';
+          default:
+            return 'Unspecified Reason';
+        }
+      };
+
+      const reasonText = humanizeRejectionCode(rejectionData.rejectionCode);
+      const bodyText = `Reason: ${reasonText}`;
+
+      // Notify the user about the rejection
+      await createNotification({
+        userId: request.userId,
+        type: 'VERIFICATION_EVENT',
+        severity: 'ERROR',
+        title: 'Verification rejected',
+        body: bodyText,
+        verificationId: requestId,
+        deepLink: null,
+        data: { method: request.method, rejectionCode: rejectionData.rejectionCode },
       });
 
       return;

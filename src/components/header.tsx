@@ -1,4 +1,5 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { Button } from '@/components/ui/button';
 import { UserDropDownMenu } from '@/components/user-dropdownmenu';
 import { Session } from '@/lib/auth';
@@ -41,7 +42,10 @@ export function Header({ session }: HeaderProps) {
 
           {/* Authentication Section */}
           {session ? (
-            <UserDropDownMenu user={session.user} />
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <UserDropDownMenu user={session.user} />
+            </div>
           ) : (
             <div className="flex items-center space-x-2">
               <Button asChild variant="ghost" size="sm">
