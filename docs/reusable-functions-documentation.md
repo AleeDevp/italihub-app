@@ -7,16 +7,17 @@ This document provides a comprehensive overview of all reusable functions, servi
 1. [Authentication System](#authentication-system)
 2. [Data Access Layer (DAL)](#data-access-layer-dal)
 3. [Server Actions](#server-actions)
-4. [Image Processing & Management](#image-processing--management)
-5. [Client-Side Hooks](#client-side-hooks)
-6. [Utility Functions](#utility-functions)
-7. [Zod Validation Schemas](#zod-validation-schemas)
-8. [Type Definitions](#type-definitions)
-9. [Context Providers](#context-providers)
-10. [Cache Layer](#cache-layer)
-11. [Email Services](#email-services)
-12. [Metadata Utilities](#metadata-utilities)
-13. [Prisma Enums (server + client)](#prisma-enums-server--client)
+4. [Image Processing & Storage](#image-processing--storage)
+5. [Audit System](#audit-system)
+6. [Client-Side Hooks](#client-side-hooks)
+7. [Utility Functions](#utility-functions)
+8. [Zod Validation Schemas](#zod-validation-schemas)
+9. [Type Definitions](#type-definitions)
+10. [Context Providers](#context-providers)
+11. [Cache Layer](#cache-layer)
+12. [Email Services](#email-services)
+13. [Metadata Utilities](#metadata-utilities)
+14. [Prisma Enums (server + client)](#prisma-enums-server--client)
 
 ---
 
@@ -33,6 +34,12 @@ The application uses **Better Auth** for authentication with PostgreSQL and Pris
 - PostgreSQL database with Prisma adapter
 - Custom user schema extensions
 - Database hooks for user creation and session management
+
+Key features in our setup:
+
+- Account linking enabled (Google) with trustedProviders and updateUserInfoOnLink
+- Email verification sent on sign up, auto sign-in after verification
+- Password reset emails via Resend with audit logs
 
 ### Server-Side Authentication Functions (`/src/lib/require-user.ts`)
 
@@ -96,9 +103,9 @@ import { signUp, signIn, signOut, useSession, linkSocial, authClient } from '@/l
 - **`signOut()`**: Sign out current user
   - **Use Case**: Logout functionality
 
-- **`linkSocial(provider)`**: Link social accounts
-  - **Parameters**: `provider: 'google'`
-  - **Use Case**: Account linking in settings
+- **`linkSocial()` / `linkSocialAccount()`**: Link social accounts
+  - Client: `linkSocial` from authClient
+  - Server action helper: `linkSocialAccount()` in `auth-actions.ts` (links Google)
 
 ### Session Management (`/src/lib/get-session.ts`)
 
@@ -110,6 +117,7 @@ import { getServerSession } from '@/lib/get-session';
   - **Use Case**: Getting session in layouts and server components
   - **Return Type**: `Promise<Session | null>`
   - **Caching**: Cached per-request for performance
+  - Note: Used internally by `requireUser`/`getCurrentUser` and audit context
 
 ---
 
@@ -171,130 +179,81 @@ import { updateProfileBasics, getUserProfileData, changeCity } from '@/lib/dal/u
   - **Business Rules**: 10-day cooldown period, verification revocation
   - **Use Case**: City selection in profile settings
 
-#### Profile Picture Operations:
+- Profile picture helpers:
+  - **`updateUserProfilePicture(userId, imageKey)`**: Set new image key on user
+  - **`getUserProfilePicture(userId)`**: Get current image key for cleanup
+  - **`deleteUserProfilePicture(userId)`**: Remove current image key (DB only)
 
-```typescript
-import { updateUserProfilePicture, getUserProfilePicture } from '@/lib/dal/user';
-```
-
-- **`updateUserProfilePicture(userId, imageKey)`**: Updates user's profile picture
-  - **Parameters**: `userId: string, imageKey: string`
-  - **Use Case**: Database update after successful image upload
-  - **Integration**: Used by image services for complete workflow
-
-- **`getUserProfilePicture(userId)`**: Gets current profile picture key
-  - **Return Type**: `Promise<string | null>`
-  - **Use Case**: Cleanup operations when replacing images
+- Admin role helpers:
+  - **`assignUserRole(targetUserId, newRole, adminUserId, adminRole?)`**
+  - **`revokeUserRole(targetUserId, adminUserId, adminRole?)`**
 
 ### Other DAL Operations
 
-#### City Operations (`/src/lib/dal/cities.ts`)
-
-```typescript
-import { updateCity } from '@/lib/dal/cities';
-```
-
-- **`updateCity(id, data)`**: Updates city data and refreshes cache
-  - **Use Case**: Admin operations for city management
-  - **Cache Integration**: Automatically invalidates city cache
+Note: There is no separate Cities DAL module; server-side city caching is provided via `lib/cache/city-cache.ts` (see Cache Layer).
 
 #### Verification Operations (`/src/lib/dal/verification.ts`)
 
-```typescript
-import { getLatestVerification, submitVerificationRequest } from '@/lib/dal/verification';
-```
+Key functions:
 
-- **`getLatestVerification(userId)`**: Gets user's latest verification request
-  - **Use Case**: Checking verification status in dashboard
-  - **Return Type**: Latest verification request with status
-
-- **`submitVerificationRequest(userId, data)`**: Creates new verification request
-  - **Use Case**: User verification submission
-  - **Business Rules**: Handles verification workflow
+- **`getLatestVerification(userId)`**: Fetch user's latest request (status/method/city)
+- **`submitVerificationRequest(userId, { method, userNote?, files })`**: Create request with files
+- **`getVerificationById(requestId, accessorUserId?)`**: Get request with files
+- **`getVerificationFiles(requestId)`**: List files for a request
+- **`addVerificationFile(requestId, actorUserId, file)`**: Add file to pending request
+- **`removeVerificationFile(fileId, actorUserId)`**: Remove file from pending request (returns storageKey for cleanup)
+- **`getUserVerificationHistory(userId)`**: History list with counts
+- **`getVerificationStorageKey(verificationId)`**: First file storage key
+- **`revokeUserVerification(userId, revokerUserId, reason?, role?)`**: Admin revoke
 
 #### Notification Operations (`/src/lib/dal/notifications.ts`)
 
-```typescript
-import {
-  getUnreadCount,
-  listNotifications,
-  markAsRead,
-  markAllAsRead,
-  createNotification,
-} from '@/lib/dal/notifications';
-```
+Exports:
 
-- **`getUnreadCount(userId)`**: Get count of unread notifications
-  - **Use Case**: Badge counts in navigation
-  - **Performance**: Optimized query for count only
-
-- **`listNotifications(userId, params?)`**: List notifications with pagination
-  - **Parameters**: Optional pagination and filtering parameters
-  - **Use Case**: Notification center/inbox
-
-- **`markAsRead(notificationId, userId)`**: Mark single notification as read
-- **`markAllAsRead(userId)`**: Mark all notifications as read
-- **`createNotification(userId, data)`**: Create new notification
-  - **Use Case**: System-generated notifications
+- **`getUnreadCount(userId)`**: Count unread
+- **`listNotifications(userId, { page?, pageSize? }?)`**: Paginated list
+- **`markRead(userId, id)`**: Mark one as read
+- **`markAllRead(userId)`**: Mark all as read
 
 #### Advertisement Operations (`/src/lib/dal/ads.ts`)
 
-```typescript
-import {
-  getUserAdStats,
-  getUserAdList,
-  getAdById,
-  type UserAdListParams,
-  type UserAdListItem,
-} from '@/lib/dal/ads';
-```
+Exports:
 
-- **`getUserAdStats(userId)`**: Get user's ad statistics
-  - **Return Type**: Counts for online/pending/expired ads
-  - **Use Case**: Dashboard overview widgets
-
-- **`getUserAdList(params)`**: Get paginated list of user's ads
-  - **Parameters**: Filtering, sorting, and pagination options
-  - **Return Type**: Typed list with `UserAdListItem` objects
-  - **Use Case**: User's ad management interface
-
-- **`getAdById(adId, userId?)`**: Get single ad by ID
-  - **Parameters**: Optional userId for ownership verification
-  - **Use Case**: Ad detail views with access control
+- **`getUserAdStats(userId)`**: Aggregate counts (mocked for now)
+- **`listUserAds(params: UserAdListParams)`**: Paginated list (temporary mock data)
+- **`getAdForOwner(adId, userId)`**: Fetch ad with ownership check and child details
+- **`deleteAd(adId, userId)`**: Delete with ownership check
 
 #### Metrics & Analytics Operations (`/src/lib/dal/metrics.ts`)
 
-```typescript
-import { recordAdView, recordAdContactClick, getAdMetrics } from '@/lib/dal/metrics';
-```
+Exports:
 
-- **`recordAdView(adId)`**: Record ad view for analytics
-- **`recordAdContactClick(adId)`**: Record contact button clicks
-- **`getAdMetrics(adId)`**: Get ad performance metrics
-  - **Use Case**: Analytics and reporting features
+- **`getOnlineAdsWithCounters(userId)`**: Top ONLINE ads with view/click counters
 
 #### Announcement Operations (`/src/lib/dal/announcements.ts`)
 
-```typescript
-import { getActiveAnnouncements, getAnnouncementById } from '@/lib/dal/announcements';
-```
+Exports:
 
-- **`getActiveAnnouncements()`**: Get all active system announcements
-- **`getAnnouncementById(id)`**: Get single announcement by ID
-  - **Use Case**: System-wide notifications and updates
+- **`listActiveAnnouncementsForUser(userId)`**: Active announcements not yet dismissed
+- **`dismissAnnouncement(userId, announcementId)`**: Mark as read/dismissed
 
 #### Activity Tracking (`/src/lib/dal/activity.ts`)
 
-```typescript
-import { logUserActivity, getUserRecentActivity } from '@/lib/dal/activity';
-```
+Current export:
 
-- **`logUserActivity(userId, action, metadata?)`**: Log user activity
-  - **Use Case**: Audit trails and user behavior tracking
-  - **Parameters**: Action type and optional metadata
+- **`listRecentUserActivity(userId, limit?)`**: Returns mock data pending schema alignment
 
-- **`getUserRecentActivity(userId, limit?)`**: Get recent user activity history
-  - **Use Case**: Activity feeds and user dashboards
+#### Moderator Verification DAL (`/src/lib/dal/moderator-verification.ts`)
+
+- Listing/searching:
+  - **`getVerificationRequestsForModerators(params, accessorUserId, accessorRole?)`**
+  - **`getVerificationRequestById(requestId, accessorUserId, accessorRole?)`**
+  - **`getVerificationStats()`**: Aggregate stats (totals, top reasons, city stats, avg processing time)
+- Actions:
+  - **`moderatorApproveVerification(requestId, moderatorUserId, role?)`**: Approve and mark user verified
+  - **`moderatorRejectVerification(requestId, moderatorUserId, { rejectionCode?, rejectionNote? }, role?)`**
+  - **`bulkApproveVerifications(requestIds, moderatorUserId, role?)`** → `{ successful, failed[] }`
+  - **`bulkRejectVerifications(requestIds, moderatorUserId, { rejectionCode?, rejectionNote? }, role?)`** → `{ successful, failed[] }`
 
 ---
 
@@ -332,17 +291,28 @@ import { completeProfileAction } from '@/lib/actions/complete-profile';
 
 ### Authentication Actions (`/src/lib/actions/auth-actions.ts`)
 
-```typescript
-import { authAction } from '@/lib/actions/auth-actions';
-```
+Exports:
 
-- **Authentication-related server actions**: Form handling for auth workflows
-  - **Integration**: Works with Better Auth system
-  - **Use Case**: Login, registration, and auth form processing
+- **`signUp(email, password, name)`**: Email/password signup (with verification)
+- **`signIn(email, password)`**: Email/password sign-in
+- **`signInSocial(provider)`**: Initiate OAuth (e.g., Google)
+- **`signOut()`**: End current session
+- **`linkSocialAccount()`**: Link Google account for current user
+- **`getAccountInfo(accountId)`**: Fetch linked account info
+
+### Verification Actions (`/src/lib/actions/verification-actions.ts`)
+
+- **`uploadVerificationFileAction(formData, requestId?)`**
+  - Validates and uploads a single verification image using the unified image service, optionally attaches it to an existing pending request.
+  - Returns `{ ok: true, data: { fileId, storageKey } } | { ok: false, error }`.
+- **`submitVerificationRequestAction({ method, userNote?, files })`**
+  - Submits a new verification request with previously uploaded files (by storageKey).
+- **`removeVerificationFileAction(fileId)`**
+  - Removes a file from a pending request and deletes it from storage.
 
 ---
 
-## Image Processing & Management
+## Image Processing & Storage
 
 Comprehensive unified image architecture with client/server separation, type-safe operations, and security-first design.
 
@@ -357,7 +327,7 @@ The unified image system provides:
 - **Comprehensive Error Handling**: Consistent `ServiceResult` pattern across all operations
 - **Automatic Cleanup**: Robust rollback mechanisms for failed operations
 
-**📋 Implementation Guide**: For step-by-step instructions on adding new image upload features, see [`docs/image-implementation-guide.md`](./image-implementation-guide.md).
+**📋 Implementation Guide**: For step-by-step instructions on adding new image upload features, see [`docs/image system/README-image-system.md`](./image%20system/README-image-system.md).
 
 ### Key Benefits:
 
@@ -374,12 +344,15 @@ Browser-safe image utilities that can be used in React components without Node.j
 ```typescript
 import {
   validateImageFile,
-  resolveImageUrl,
   generateCloudinaryUrl,
+  resolveImageUrl,
   getOptimizedUrl,
+  generateResponsiveUrls,
   cropImageToBlob,
+  resizeImageToBlob,
   formatFileSize,
   detectFileType,
+  classifyVerificationFileRole,
   handleServiceError,
   serviceToActionResult,
   IMAGE_TYPE_CONFIGS,
@@ -411,18 +384,21 @@ import {
 
 #### URL Generation & Optimization:
 
-- **`resolveImageUrl(storageKey, fallback?, imageType?)`**: Smart image URL resolution
-  - **Parameters**: `storageKey: string | null, fallback?: string, imageType?: ImageType`
-  - **Return Type**: `string`
-  - **Features**: Automatic optimization, fallback handling, type-specific sizing
-  - **Use Case**: Display images with proper optimization
+- **`resolveImageUrl(image, options?)`**: Smart URL resolution
+  - **Parameters**: `image?: string | null`, `options?: ImageProcessingOptions`
+  - **Return**: `string | null`
+  - **Notes**: Accepts full URLs, blob URLs, public paths, or Cloudinary storage keys
 
-- **`generateCloudinaryUrl(storageKey, imageType, options?)`**: Generate optimized Cloudinary URLs
+- **`generateCloudinaryUrl(publicId, options?)`**: Generate optimized Cloudinary URLs
   - **Features**: Type-specific optimization, responsive image generation
   - **Use Case**: Custom image transformations
 
 - **`getOptimizedUrl(storageKey, imageType)`**: Get optimized URL for image type
   - **Use Case**: Standard optimized images for UI components
+
+- **`generateResponsiveUrls(publicId, baseWidth?)`**: Small/medium/large/xlarge URLs
+
+- **`resizeImageToBlob(imageUrl, maxWidth, maxHeight, quality?)`**: Client-side resize
 
 #### Utilities:
 
@@ -463,22 +439,24 @@ import {
   uploadImageToCloudinary,
   deleteCloudinaryImage,
   bulkDeleteCloudinaryImages,
+  getSignedUrl,
+  buildPublicId,
+  toDbFileRecord,
+  mimeFromStorageKey,
   ImageService,
   AvatarService,
   CoverPhotoService,
   GalleryService,
   ContentImageService,
+  VerificationImageService,
   type ImageUploadResult,
 } from '@/lib/image-utils-server';
 ```
 
 #### Core Upload Operations:
 
-- **`uploadImageToCloudinary(file, userId, imageType)`**: Upload files to Cloudinary
-  - **Parameters**: `file: File, userId: string, imageType: ImageType`
-  - **Return Type**: `Promise<ServiceResult<ImageUploadResult>>`
-  - **Features**: Validation, optimization, unique naming, retry logic
-  - **Use Case**: Server actions for image uploads
+- **`uploadImageToCloudinary(file, userId, imageType)`**: Upload file to Cloudinary
+  - **Returns**: `Promise<ImageUploadResult>` (throws on error). Prefer using `ImageService.uploadImage` for a `ServiceResult` wrapper.
 
 #### Cleanup Operations:
 
@@ -490,6 +468,12 @@ import {
 - **`bulkDeleteCloudinaryImages(storageKeys)`**: Efficient bulk deletion
   - **Parameters**: `storageKeys: string[]`
   - **Use Case**: Mass cleanup operations
+
+- Helpers:
+  - **`getSignedUrl(storageKey, { resourceType? })`**: Signed delivery URL (if configured)
+  - **`buildPublicId(folder, userId, hash, uniqueId)`**: Compose publicId
+  - **`toDbFileRecord(upload)`**: `{ storageKey, mimeType, bytes }`
+  - **`mimeFromStorageKey(storageKey)`**: Derive MIME from extension
 
 #### Specialized Services:
 
@@ -511,35 +495,36 @@ import {
   - **Features**: Database integration, cleanup handling
   - **Use Case**: Complete avatar workflow
 
-- **Service Classes**: `CoverPhotoService`, `GalleryService`, `ContentImageService`
+- **Service Classes**: `CoverPhotoService`, `GalleryService`, `ContentImageService`, `VerificationImageService`
   - **Features**: Type-specific optimizations and constraints
   - **Use Case**: Specialized image handling workflows
+
+### Storage Provider Abstraction (`/src/lib/storage`)
+
+- **`getStorageProvider()`**: Resolves provider by `STORAGE_PROVIDER` (default Cloudinary)
+- Cloudinary implementation (`cloudinary-provider.ts`):
+  - **`uploadBuffer`**, **`deleteByStorageKey`**, **`deleteManyByStorageKeys`**
+  - Optional helpers: **`getPreviewUrl(publicId, { width?, page? })`**, **`getSignedUrl(storageKey, { resourceType? })`**
 
 ---
 
 ## Client-Side Hooks
 
-### UserId Management Hooks (`/src/hooks/use-userid-availability.ts` & `/src/hooks/use-userid-validation.ts`)
+### UserId Management Hooks (`/src/hooks/use-userid-availability.ts`)
 
 ```typescript
 import { useUserIdAvailability } from '@/hooks/use-userid-availability';
-import { useUserIdValidation } from '@/hooks/use-userid-validation';
 ```
 
 #### UserId Availability Checking:
 
-- **`useUserIdAvailability(userId, currentUserId?)`**: Real-time availability checking
-  - **Parameters**: `userId: string, currentUserId?: string`
-  - **Return Type**: `{ status: 'available' | 'taken' | 'reserved' | 'invalid', isChecking: boolean }`
-  - **Features**: Debounced checking, loading states, comprehensive validation
-  - **Use Case**: Profile forms with live feedback
+Hook signature: `useUserIdAvailability(currentUserId?)`
 
-#### UserId Format Validation:
+Returns: `{ status, message, check }` where `status` ∈ `'idle'|'checking'|'available'|'taken'|'invalid'|'reserved'|'error'` and `check(userId: string)` debounces and hits `/api/users/availability`.
 
-- **`useUserIdValidation(userId)`**: Format validation hook
-  - **Features**: Real-time format validation using Zod schemas
-  - **Integration**: Works with availability checking for complete validation
-  - **Use Case**: Form validation and user feedback
+Client-side format validation is performed using `CompleteProfileSchema.shape.userId` prior to network calls.
+
+Note: `use-userid-validation.ts` is currently commented out; format checks are handled inside `useUserIdAvailability` using Zod.
 
 ### File Upload Hook (`/src/hooks/use-file-upload.ts`)
 
@@ -636,10 +621,10 @@ const [{ files }, { addFiles }] = useFileUpload({
 
 ```typescript
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const isDesktop = useMediaQuery('(min-width: 768px)');
-const isMobile = useMobile();
+const isMobile = useIsMobile();
 ```
 
 - **`useMediaQuery(query)`**: Generic media query hook for responsive design
@@ -735,11 +720,11 @@ import { CompleteProfileSchema, Step4Schema } from '@/lib/schemas/complete-profi
 ```
 
 - **`CompleteProfileSchema`**: Comprehensive profile completion validation
-  - **`name`**: 3-12 characters, alphanumeric with spaces
-  - **`userId`**: 4-10 characters, alphanumeric + underscore, no consecutive underscores
-  - **`city`**: Must be valid Italian city ID from database
-  - **`telegram`**: Valid Telegram username format (@username)
-  - **`profilePic`**: Optional file validation integrated with unified image system
+  - `name`: 3–12 chars
+  - `userId`: 4–10 chars, starts with a letter, alphanumeric + underscore, no trailing or double underscores
+  - `city`: must match one of `constants/italianCities` names
+  - `telegram`: strict Telegram username regex
+  - `profilePic`: optional File-like with size/type checks (rejects GIFs)
 
 - **`Step4Schema`**: Extracted profile picture validation for reuse
 - **Image Validation**: Uses unified image system (`IMAGE_TYPE_CONFIGS['avatar']`) for consistent validation across the application
@@ -852,7 +837,7 @@ import { ImageUploadResult } from '@/lib/image-utils-server';
 ```
 
 - **`ImageUploadResult`**: Cloudinary upload response structure
-  - **Properties**: `storageKey`, `publicId`, `width`, `height`, `bytes`, `format`, `url`, `secureUrl`
+  - **Properties**: `storageKey`, `publicId`, `width`, `height`, `bytes`, `format`, `mimeType`, `url`, `secureUrl`
   - **Use Case**: Handling successful upload responses and database storage
 
 ### City Types (`/src/types/city.ts`)
@@ -894,7 +879,7 @@ import { CitiesProvider, useCities, useCityName, useCityById } from '@/contexts/
 #### Hooks:
 
 - **`useCities()`**: Gets all cities array with automatic loading and caching
-  - **Return Type**: `City[] | null`
+  - **Return Type**: `City[]` (empty array when not loaded)
   - **Features**: Automatic loading from storage, server-side hydration support
 - **`useCityName(id)`**: Gets city name by ID
   - **Parameters**: `id: number`
@@ -924,7 +909,7 @@ import { CitiesProvider, useCities, useCityName, useCityById } from '@/contexts/
 Server-side in-memory cache for city data with automatic TTL and freshness management.
 
 ```typescript
-import { getAllCities, refreshCities, getCityById, getCityBySlug } from '@/lib/cache/city-cache';
+import { getAllCities, refreshCities, getCityById, setCityCacheTTL } from '@/lib/cache/city-cache';
 ```
 
 #### Core Functions:
@@ -943,9 +928,7 @@ import { getAllCities, refreshCities, getCityById, getCityBySlug } from '@/lib/c
   - **Performance**: O(1) lookup from cached array
   - **Use Case**: City detail pages, user profile displays
 
-- **`getCityBySlug(slug: string)`**: Get single city by slug from cache
-  - **Performance**: Efficient slug-based lookup
-  - **Use Case**: SEO-friendly URLs, city pages
+- **`setCityCacheTTL(ms)`**: Adjust TTL dynamically
 
 #### Cache Features:
 
@@ -1025,6 +1008,30 @@ import { createMetadata, baseUrl } from '@/lib/metadata';
   - **Production**: Uses `VERCEL_URL` or configured production URL
   - **Use Case**: Absolute URL generation, canonical URLs, social sharing
 
+## Audit System
+
+### Core Audit Logger (`/src/lib/audit.ts`)
+
+Exports:
+
+- Core functions: **`logAudit`**, **`logSuccess`**, **`logFailure`**, **`logAuditBatch`**
+- Wrapper for audited mutations: **`auditServerAction(action, entityType, operation, context, entityId?, note?, metadata?)`**
+- Auth-specific auditor: **`AuthAuditor`** with methods:
+  - `logRegistrationSuccess(email, userId, metadata?)`
+  - `logRegistrationFailure(email, errorCode, metadata?)`
+  - `logLoginSuccess(userId, sessionId, metadata?)`
+  - `logLoginFailure(email, errorCode, metadata?)`
+  - `logLogoutSuccess(userId, sessionId?, metadata?)`
+  - `logOAuthSuccess(action, userId, provider, metadata?)`
+  - `logOAuthFailure(action, userId|null, provider, errorCode, metadata?)`
+  - `logPasswordResetRequest(email, userId?, metadata?)`
+  - `logPasswordResetConfirm(userId, metadata?)`
+
+### Audit Context Helpers (`/src/lib/audit-context.ts`)
+
+- **`getAuditContextFromSession()`**: Pulls user/session from Better Auth
+- **`getEnhancedAuditContext()`**: Adds IP, userAgent, requestId
+
 ---
 
 ## Best Practices
@@ -1045,8 +1052,8 @@ import { createMetadata, baseUrl } from '@/lib/metadata';
 
 ### 3. Image Operations
 
-- **Client-side**: Use unified image utilities for validation, cropping, and URL generation
-- **Server-side**: Use specialized services (AvatarService, etc.) for complete workflows
+- **Client-side**: Use unified image utilities for validation, cropping, resize, URL generation
+- **Server-side**: Use specialized services (AvatarService, VerificationImageService, etc.) for complete workflows
 - **Validation**: Always validate on client before upload, re-validate on server
 - **Cleanup**: Implement proper cleanup for failed operations and image replacements
 
@@ -1204,23 +1211,19 @@ export function AvatarUpload() {
 ### Smart Image Display with Optimization:
 
 ```typescript
-import { resolveImageUrl, generateCloudinaryUrl } from '@/lib/image-utils-client';
+import { getOptimizedUrl, generateResponsiveUrls } from '@/lib/image-utils-client';
 import { useCities, useCityName } from '@/contexts/cities-context';
 
 export function UserCard({ user }: { user: User }) {
   const cityName = useCityName(user.cityId);
 
-  // Smart URL resolution with fallback and optimization
-  const avatarUrl = resolveImageUrl(
-    user.image,
-    '/avatar-default.svg',
-    'avatar'
-  );
+  // Optimized avatar URL with fallback
+  const avatarUrl = user.image ? getOptimizedUrl(user.image, 'avatar') : '/avatar-default.svg';
 
   return (
     <div className="user-card">
       <img
-        src={avatarUrl}
+        src={avatarUrl || '/avatar-default.svg'}
         alt={`${user.name}'s avatar`}
         className="w-16 h-16 rounded-full"
       />
@@ -1236,18 +1239,17 @@ export function UserCard({ user }: { user: User }) {
 
 // Responsive image with multiple sizes
 export function HeroImage({ coverImage }: { coverImage: string | null }) {
-  const baseUrl = coverImage;
+  const storageKey = coverImage;
 
-  if (!baseUrl) return <div className="placeholder">No image</div>;
+  if (!storageKey) return <div className="placeholder">No image</div>;
+
+  const publicId = storageKey.replace(/\.[^.]+$/, '');
+  const urls = generateResponsiveUrls(publicId, 1200);
 
   return (
     <img
-      src={resolveImageUrl(baseUrl, null, 'cover')}
-      srcSet={`
-        ${generateCloudinaryUrl(baseUrl, 'cover', { width: 800 })} 800w,
-        ${generateCloudinaryUrl(baseUrl, 'cover', { width: 1200 })} 1200w,
-        ${generateCloudinaryUrl(baseUrl, 'cover', { width: 1600 })} 1600w
-      `}
+      src={urls.medium}
+      srcSet={`${urls.small} 800w, ${urls.medium} 1200w, ${urls.large} 1600w, ${urls.xlarge} 2400w`}
       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
       alt="Cover image"
       className="w-full h-64 object-cover"
@@ -1263,6 +1265,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { profileBasicsSchema } from '@/lib/schemas/dashboard';
 import { useUserIdAvailability } from '@/hooks/use-userid-availability';
+import { useEffect } from 'react';
 
 export function ProfileForm({ currentUser }: { currentUser: User }) {
   const form = useForm({
@@ -1275,13 +1278,17 @@ export function ProfileForm({ currentUser }: { currentUser: User }) {
   });
 
   const userId = form.watch('userId');
-  const { status, isChecking } = useUserIdAvailability(userId, currentUser.userId);
+  const { status, message, check } = useUserIdAvailability(currentUser.userId || undefined);
+
+  useEffect(() => {
+    if (userId) check(userId);
+  }, [userId, check]);
 
   const onSubmit = async (data: any) => {
     if (status !== 'available') return;
 
-    // Submit form data
-    const result = await updateProfileBasics(data);
+  // Submit form data via your server action (do not call DAL directly from the client)
+  // const result = await saveProfileBasicsAction(data)
     if (result.ok) {
       toast.success('Profile updated!');
     } else {
@@ -1300,9 +1307,12 @@ export function ProfileForm({ currentUser }: { currentUser: User }) {
       <div>
         <label>User ID</label>
         <input {...form.register('userId')} />
-        {isChecking && <span>Checking...</span>}
-        {!isChecking && status === 'available' && <span className="text-green-600">✓ Available</span>}
-        {!isChecking && status === 'taken' && <span className="text-red-600">Already taken</span>}
+        {status === 'checking' && <span>Checking...</span>}
+        {status === 'available' && <span className="text-green-600">✓ Available</span>}
+        {status === 'taken' && <span className="text-red-600">Already taken</span>}
+        {(status === 'invalid' || status === 'reserved' || status === 'error') && (
+          <span className="text-red-600">{message}</span>
+        )}
         {form.formState.errors.userId && <span>{form.formState.errors.userId.message}</span>}
       </div>
 
@@ -1386,7 +1396,7 @@ Comprehensive type safety from client to database:
 
 ---
 
-This documentation reflects the current state of the ItaliaHub application as of **September 2025**. All functions, hooks, and services documented here are actively used in production and follow established architectural patterns. The codebase maintains strict separation of concerns, comprehensive type safety, and consistent error handling patterns throughout.
+This documentation reflects the current state of the ItaliaHub application as of **October 2025**. All functions, hooks, and services documented here mirror the codebase and follow established architectural patterns. The codebase maintains strict separation of concerns, comprehensive type safety, and consistent error handling patterns throughout.
 
 For questions about specific implementations or architectural decisions, refer to the source code in the referenced file paths or consult the team's development guidelines.
 
