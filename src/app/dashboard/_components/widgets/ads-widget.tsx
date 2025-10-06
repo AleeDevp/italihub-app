@@ -1,4 +1,4 @@
-import { StatusBadge } from '@/components/dashboard/status-badge';
+import { AdStatusBadge } from '@/components/dashboard/ad-status-badge';
 import { Widget } from '@/components/dashboard/widget';
 import type { AdStatus } from '@/lib/enums';
 import { Eye, FileText, MessageCircle } from 'lucide-react';
@@ -35,7 +35,7 @@ export function AdsWidget({ ads }: AdsWidgetProps) {
                 {ad.contactClicksCount}
               </div>
             </div>
-            <StatusBadge status={ad.status} />
+            <AdStatusBadge status={ad.status} />
           </div>
         ))}
         {ads.length === 0 && <p className="text-sm text-muted-foreground">No ads yet</p>}

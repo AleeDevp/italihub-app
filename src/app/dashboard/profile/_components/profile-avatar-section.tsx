@@ -25,12 +25,14 @@ import { toast } from 'sonner';
 
 interface ProfileAvatarSectionProps {
   userId: string;
+  isVerified: boolean;
   userName: string;
   currentImageKey?: string | null;
 }
 
 export function ProfileAvatarSection({
   userId,
+  isVerified,
   userName,
   currentImageKey,
 }: ProfileAvatarSectionProps) {
@@ -144,11 +146,12 @@ export function ProfileAvatarSection({
         <div className="flex flex-col space-y-4 flex-1 items-center justify-center">
           <div className="group relative">
             <div className="p-1.5 rounded-full bg-gradient-to-tr from-primary/30 via-primary/10 to-transparent">
-              <div className="rounded-full ring-1 ring-black/5 dark:ring-white/10 bg-background">
+              <div className="rounded-full bg-background">
                 <UserAvatar
                   image={optimisticImageKey}
                   alt={userName}
                   size={200}
+                  isVerified={isVerified}
                   className="h-24 w-24 md:h-28 md:w-28 transition-transform duration-300 ease-out group-hover:scale-[1.03]"
                 />
               </div>

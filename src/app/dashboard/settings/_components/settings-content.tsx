@@ -4,59 +4,35 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { getUserProfileData } from '@/lib/dal/user';
+import { Session } from '@/lib/auth';
 import { AlertTriangle, Bell, Globe, Shield, Trash2, User } from 'lucide-react';
 
 interface SettingsContentProps {
-  userId: string;
+  session: Session;
 }
 
-export async function SettingsContent({ userId }: SettingsContentProps) {
-  const userProfile = await getUserProfileData(userId);
+export async function SettingsContent({ session }: SettingsContentProps) {
+  const user = session.user;
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-3xl mx-auto space-y-6">
       {/* Profile Settings */}
-      <Card>
+      <Card className="">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Profile Information
+            Account Information
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input
-              id="name"
-              defaultValue={userProfile?.name || ''}
-              placeholder="Enter your full name"
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
-            <Input id="email" type="email" defaultValue="" placeholder="Enter your email" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="userId">Username</Label>
-            <div className="flex gap-2">
-              <Input
-                id="userId"
-                defaultValue={userProfile?.userId || ''}
-                placeholder="Choose a unique username"
-              />
-              <Button variant="outline">Check</Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              This will be your public profile URL: italihub.com/{userProfile?.userId || 'username'}
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input id="phone" defaultValue="" placeholder="Enter your phone number" />
+            <Input
+              variant="showcase"
+              id="email"
+              defaultValue={user.email}
+              placeholder="Enter your email"
+            />
           </div>
 
           <div className="flex justify-end">

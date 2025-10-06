@@ -1,5 +1,4 @@
-import { WidgetSkeleton } from '@/components/dashboard/skeleton';
-import { getCityById } from '@/lib/cache/city-cache';
+import { TableSkeleton } from '@/components/dashboard/skeleton';
 import { requireUser } from '@/lib/require-user';
 import { Suspense } from 'react';
 import { VerificationContent } from './_components/verification-content';
@@ -7,12 +6,9 @@ import { VerificationContent } from './_components/verification-content';
 export default async function VerificationPage() {
   const user = await requireUser();
 
-  // Get the city information for the user
-  const city = user.cityId ? await getCityById(user.cityId) : null;
-
   return (
-    <div className="space-y-6">
-      <div>
+    <div className=" w-full max-w-7xl mx-auto">
+      <div className="my-6">
         <h1 className="text-3xl font-bold">Account Verification</h1>
         <p className="text-muted-foreground">
           Verify your identity verification to unlock all ItaliaHub features and build trust with
@@ -23,13 +19,11 @@ export default async function VerificationPage() {
       <Suspense
         fallback={
           <div className="space-y-4">
-            <WidgetSkeleton />
-            <WidgetSkeleton />
-            <WidgetSkeleton />
+            <TableSkeleton />
           </div>
         }
       >
-        <VerificationContent userId={user.id} userName={user.name} cityName={city?.name} />
+        <VerificationContent user={user} />
       </Suspense>
     </div>
   );

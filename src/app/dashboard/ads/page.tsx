@@ -27,8 +27,8 @@ export default async function AdsPage({ searchParams }: AdsPageProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="w-full max-w-7xl mx-auto">
+      <div className="my-6">
         <h1 className="text-2xl font-bold tracking-tight">My Ads</h1>
         <p className="text-muted-foreground">
           Manage all your listings and track their performance

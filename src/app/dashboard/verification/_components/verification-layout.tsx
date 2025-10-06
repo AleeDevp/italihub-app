@@ -1,7 +1,6 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
@@ -13,6 +12,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useCities } from '@/contexts/cities-context';
 import type { VerificationMethod, VerificationStatus } from '@/generated/prisma';
+import { User } from '@/lib/auth';
 import { Enum, humanize } from '@/lib/enums';
 import { resolveImageUrl } from '@/lib/image-utils-client';
 import { cn } from '@/lib/utils';
@@ -21,7 +21,6 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  Eye,
   FileCheck,
   MapPin,
   Shield,
@@ -37,9 +36,8 @@ import { VerificationMethodsGuide } from './verification-methods-guide';
 import { VerificationStepper } from './verification-stepper';
 
 interface VerificationLayoutProps {
-  userId: string;
-  userName?: string;
-  cityName?: string;
+  user: User;
+
   verificationHistory: {
     id: number;
     status: VerificationStatus;
@@ -53,12 +51,7 @@ interface VerificationLayoutProps {
   }[];
 }
 
-export function VerificationLayout({
-  userId,
-  userName,
-  cityName,
-  verificationHistory,
-}: VerificationLayoutProps) {
+export function VerificationLayout({ user, verificationHistory }: VerificationLayoutProps) {
   const router = useRouter();
   const cities = useCities();
   const getCityName = useCallback(
@@ -150,22 +143,22 @@ export function VerificationLayout({
     }
   }, [latestVerification?.id]);
 
-  const handleViewDocuments = useCallback(async () => {
-    if (!latestVerification) return;
+  // const handleViewDocuments = useCallback(async () => {
+  //   if (!latestVerification) return;
 
-    setIsViewingDocuments(true);
+  //   setIsViewingDocuments(true);
 
-    // Only fetch if we don't already have the storage key
-    if (!storageKey) {
-      setIsLoadingFiles(true);
-      try {
-        const key = await fetchStorageKey();
-        setStorageKey(key);
-      } finally {
-        setIsLoadingFiles(false);
-      }
-    }
-  }, [latestVerification, storageKey, fetchStorageKey]);
+  //   // Only fetch if we don't already have the storage key
+  //   if (!storageKey) {
+  //     setIsLoadingFiles(true);
+  //     try {
+  //       const key = await fetchStorageKey();
+  //       setStorageKey(key);
+  //     } finally {
+  //       setIsLoadingFiles(false);
+  //     }
+  //   }
+  // }, [latestVerification, storageKey, fetchStorageKey]);
 
   // Memoized image URL - only recalculates when storageKey changes
   const imageUrl = useMemo(() => {
@@ -174,7 +167,7 @@ export function VerificationLayout({
   }, [storageKey]);
 
   return (
-    <div className="container mx-auto">
+    <div>
       {/* Two-column layout for lg+ screens, single column for mobile */}
       <div className="grid lg:grid-cols-12 gap-6">
         {/* Main Content Column (8/12 on lg+) */}
@@ -243,7 +236,9 @@ export function VerificationLayout({
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="font-medium">City</p>
-                          <p className="text-muted-foreground">{cityName || 'Unknown'}</p>
+                          <p className="text-muted-foreground">
+                            {getCityName(user.cityId) || 'Unknown'}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -295,7 +290,7 @@ export function VerificationLayout({
               </div>
 
               {/* Action Buttons */}
-              {latestVerification && (
+              {/* {latestVerification && (
                 <div className="flex gap-3 pt-2 justify-end">
                   <Button
                     variant="outline"
@@ -307,7 +302,7 @@ export function VerificationLayout({
                     View Document
                   </Button>
                 </div>
-              )}
+              )} */}
             </CardContent>
           </Card>
 

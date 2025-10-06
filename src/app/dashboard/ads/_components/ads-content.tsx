@@ -1,4 +1,4 @@
-import { StatusBadge } from '@/components/dashboard/status-badge';
+import { AdStatusBadge } from '@/components/dashboard/ad-status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -96,7 +96,7 @@ export async function AdsContent({ userId, params }: AdsContentProps) {
                       <Badge variant="outline" className="text-xs">
                         {ad.category}
                       </Badge>
-                      <StatusBadge status={ad.status} />
+                      <AdStatusBadge status={ad.status} />
                       {ad.expirationDate && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />

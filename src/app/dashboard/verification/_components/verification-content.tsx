@@ -1,25 +1,13 @@
+import { User } from '@/lib/auth';
 import { getUserVerificationHistory } from '@/lib/dal/verification';
 import { VerificationLayout } from './verification-layout';
 
 interface VerificationContentProps {
-  userId: string;
-  userName?: string;
-  cityName?: string;
+  user: User;
 }
 
-export async function VerificationContent({
-  userId,
-  userName,
-  cityName,
-}: VerificationContentProps) {
-  const verificationHistory = await getUserVerificationHistory(userId);
+export async function VerificationContent({ user }: VerificationContentProps) {
+  const verificationHistory = await getUserVerificationHistory(user.id);
 
-  return (
-    <VerificationLayout
-      userId={userId}
-      userName={userName}
-      cityName={cityName}
-      verificationHistory={verificationHistory}
-    />
-  );
+  return <VerificationLayout user={user} verificationHistory={verificationHistory} />;
 }

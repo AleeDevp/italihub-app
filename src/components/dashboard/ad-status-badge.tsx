@@ -6,7 +6,7 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+export function AdStatusBadge({ status, className }: StatusBadgeProps) {
   const getVariant = (status: AdStatus) => {
     switch (status) {
       case 'ONLINE':

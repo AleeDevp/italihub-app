@@ -2,8 +2,11 @@
 
 import type { NotificationItem } from '@/contexts/notification-context';
 import { formatDistanceToNow } from 'date-fns';
-import { Bell, ChevronRight, Flag, Megaphone, ShieldCheck, Tag } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import React from 'react';
+import { getNotificationIcons } from './notification-icons';
+import { navigateForNotification } from './notification-routes';
+import { getNotificationTheme } from './notification-theme';
 
 type CommonProps = {
   item: NotificationItem;
@@ -23,7 +26,9 @@ function WatermarkIcon({
 }) {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-md">
-      <div className={cn('absolute -right-2 -top-2 opacity-[0.07]', colorClass)}>{children}</div>
+      <div className={cn('absolute -right-2 top-1/2 -translate-y-1/2 opacity-[0.07]', colorClass)}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -31,7 +36,8 @@ function WatermarkIcon({
 function BaseItem({
   item,
   onClick,
-  bg,
+  bgVibrant,
+  bgMuted,
   watermark,
   metaLabel,
   rightAdornment,
@@ -39,7 +45,8 @@ function BaseItem({
 }: {
   item: NotificationItem;
   onClick?: () => void;
-  bg?: string; // background color classes
+  bgVibrant?: string; // background color when new/recent
+  bgMuted?: string; // background color when older read
   watermark?: React.ReactNode; // faint background icon
   metaLabel?: string;
   rightAdornment?: React.ReactNode;
@@ -52,10 +59,10 @@ function BaseItem({
   return (
     <li
       className={cn(
-        'relative p-3 pb-6 transition-colors rounded-md cursor-pointer shadow-xs ',
-        'hover:bg-accent/60',
-        isVibrant ? 'bg-accent/40 border-border/60' : 'border-transparent',
-        bg
+        'relative p-3 pb-6 transition-colors rounded-md cursor-pointer shadow-xs',
+        isVibrant ? 'shadow-sm' : 'opacity-95',
+        'hover:brightness-[1.03]',
+        isVibrant ? bgVibrant || 'bg-accent/50' : bgMuted || 'bg-muted/30'
       )}
       onClick={onClick}
     >
@@ -110,43 +117,31 @@ function BaseItem({
 // AD_EVENT variants: ONLINE (success), REJECTED (error), EXPIRED (warning) — PENDING ignored
 export function AdNotificationItem({ item, onNavigate }: CommonProps) {
   const status: string | undefined = item?.data?.adStatus || item?.data?.status;
-  const navigate = () => {
-    if (onNavigate) onNavigate();
-    window.location.href = '/dashboard/ads';
-  };
+  const navigate = () => navigateForNotification(item, onNavigate);
 
   if (status === 'PENDING') return null;
-
-  let bg = 'bg-green-50/30';
-  let wmColor = 'text-green-600';
-  if (status === 'REJECTED') {
-    bg = 'bg-red-50/30';
-    wmColor = 'text-red-600';
-  } else if (status === 'EXPIRED') {
-    bg = 'bg-amber-50/30';
-    wmColor = 'text-amber-600';
-  } else if (status === 'ONLINE') {
-    bg = 'bg-emerald-50/30';
-    wmColor = 'text-emerald-600';
-  } else {
-    // fallback
-    bg = 'bg-sky-50/30';
-    wmColor = 'text-sky-600';
-  }
+  const shared = getNotificationTheme(item);
 
   return (
     <BaseItem
       item={item}
       onClick={navigate}
-      bg={bg}
-      metaLabel="Ad notification"
-      metaIcon={<Tag className="h-3.5 w-3.5 text-muted-foreground" />}
+      bgVibrant={shared.bgVibrant}
+      bgMuted={shared.bgMuted}
+      metaLabel={shared.metaLabel}
+      metaIcon={(() => {
+        const { Icon } = getNotificationIcons(item);
+        return <Icon className="h-3.5 w-3.5 text-muted-foreground" />;
+      })()}
       rightAdornment={<ChevronRight className="h-5 w-5 text-muted-foreground" />}
-      watermark={
-        <WatermarkIcon colorClass={wmColor}>
-          <Tag className="h-20 w-20" />
-        </WatermarkIcon>
-      }
+      watermark={(() => {
+        const { WmIcon } = getNotificationIcons(item);
+        return (
+          <WatermarkIcon colorClass={shared.wmColor}>
+            <WmIcon className="h-20 w-20" />
+          </WatermarkIcon>
+        );
+      })()}
     />
   );
 }
@@ -161,98 +156,106 @@ export function VerificationNotificationItem({ item, onNavigate }: CommonProps) 
       : item.severity === 'ERROR'
         ? 'REJECTED'
         : status;
-  const navigate = () => {
-    if (onNavigate) onNavigate();
-    window.location.href = '/dashboard/verification';
-  };
+  const navigate = () => navigateForNotification(item, onNavigate);
 
   if (derived === 'PENDING') return null;
 
-  let bg = 'bg-green-50/30';
-  let wmColor = 'text-green-600';
-  if (derived === 'REJECTED') {
-    bg = 'bg-rose-50/30';
-    wmColor = 'text-rose-600';
-  } else if (derived === 'APPROVED') {
-    bg = 'bg-emerald-50/30';
-    wmColor = 'text-emerald-600';
-  }
+  const shared = getNotificationTheme(item);
 
   return (
     <BaseItem
       item={item}
       onClick={navigate}
-      bg={bg}
-      metaLabel="Verification notification"
-      metaIcon={<ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />}
+      bgVibrant={shared.bgVibrant}
+      bgMuted={shared.bgMuted}
+      metaLabel={shared.metaLabel}
+      metaIcon={(() => {
+        const { Icon } = getNotificationIcons(item);
+        return <Icon className="h-3.5 w-3.5 text-muted-foreground" />;
+      })()}
       rightAdornment={<ChevronRight className="h-5 w-5 text-muted-foreground" />}
-      watermark={
-        <WatermarkIcon colorClass={wmColor}>
-          <ShieldCheck className="h-20 w-20" />
-        </WatermarkIcon>
-      }
+      watermark={(() => {
+        const { WmIcon } = getNotificationIcons(item);
+        return (
+          <WatermarkIcon colorClass={shared.wmColor}>
+            <WmIcon className="h-20 w-20" />
+          </WatermarkIcon>
+        );
+      })()}
     />
   );
 }
 
 // REPORT_EVENT: info look across all subtypes
 export function ReportNotificationItem({ item, onNavigate }: CommonProps) {
-  const navigate = () => {
-    // No specific redirect requested; follow deepLink if provided
-    if (onNavigate) onNavigate();
-    if (item.deepLink) window.location.href = item.deepLink;
-  };
+  const navigate = () => navigateForNotification(item, onNavigate);
+  const shared = getNotificationTheme(item);
 
   return (
     <BaseItem
       item={item}
       onClick={item.deepLink ? navigate : undefined}
-      bg="bg-sky-50/30"
-      metaLabel="Report notification"
-      metaIcon={<Flag className="h-3.5 w-3.5 text-muted-foreground" />}
-      watermark={
-        <WatermarkIcon colorClass="text-sky-600">
-          <Flag className="h-20 w-20" />
-        </WatermarkIcon>
-      }
+      bgVibrant={shared.bgVibrant}
+      bgMuted={shared.bgMuted}
+      metaLabel={shared.metaLabel}
+      metaIcon={(() => {
+        const { Icon } = getNotificationIcons(item);
+        return <Icon className="h-3.5 w-3.5 text-muted-foreground" />;
+      })()}
+      watermark={(() => {
+        const { WmIcon } = getNotificationIcons(item);
+        return (
+          <WatermarkIcon colorClass={shared.wmColor}>
+            <WmIcon className="h-20 w-20" />
+          </WatermarkIcon>
+        );
+      })()}
     />
   );
 }
 
 // SYSTEM_ANNOUNCEMENT: unique announcement UI
 export function SystemAnnouncementNotificationItem({ item, onNavigate }: CommonProps) {
-  const navigate = () => {
-    if (onNavigate) onNavigate();
-    if (item.deepLink) window.location.href = item.deepLink;
-  };
+  const navigate = () => navigateForNotification(item, onNavigate);
+  const shared = getNotificationTheme(item);
 
   return (
     <BaseItem
       item={item}
       onClick={item.deepLink ? navigate : undefined}
-      bg="bg-purple-50/30"
-      metaLabel="Announcement notification"
-      metaIcon={<Megaphone className="h-3.5 w-3.5 text-muted-foreground" />}
-      watermark={
-        <WatermarkIcon colorClass="text-purple-600">
-          <Megaphone className="h-20 w-20" />
-        </WatermarkIcon>
-      }
+      bgVibrant={shared.bgVibrant}
+      bgMuted={shared.bgMuted}
+      metaLabel={shared.metaLabel}
+      metaIcon={(() => {
+        const { Icon } = getNotificationIcons(item);
+        return <Icon className="h-3.5 w-3.5 text-muted-foreground" />;
+      })()}
+      watermark={(() => {
+        const { WmIcon } = getNotificationIcons(item);
+        return (
+          <WatermarkIcon colorClass={shared.wmColor}>
+            <WmIcon className="h-20 w-20" />
+          </WatermarkIcon>
+        );
+      })()}
     />
   );
 }
 
 export function GenericNotificationItem({ item, onNavigate }: CommonProps) {
-  const navigate = () => {
-    if (onNavigate) onNavigate();
-    if (item.deepLink) window.location.href = item.deepLink;
-  };
+  const navigate = () => navigateForNotification(item, onNavigate);
+  const shared = getNotificationTheme(item);
   return (
     <BaseItem
       item={item}
       onClick={item.deepLink ? navigate : undefined}
-      metaLabel="Notification"
-      metaIcon={<Bell className="h-3.5 w-3.5 text-muted-foreground" />}
+      bgVibrant={shared.bgVibrant}
+      bgMuted={shared.bgMuted}
+      metaLabel={shared.metaLabel}
+      metaIcon={(() => {
+        const { Icon } = getNotificationIcons(item);
+        return <Icon className="h-3.5 w-3.5 text-muted-foreground" />;
+      })()}
     />
   );
 }

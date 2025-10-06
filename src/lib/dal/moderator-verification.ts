@@ -475,7 +475,7 @@ export async function moderatorApproveVerification(
         type: 'VERIFICATION_EVENT',
         severity: 'SUCCESS',
         title: 'Verification approved',
-        body: 'Your verification request has been approved. You are now verified.',
+        body: 'Your verification request has been approved.',
         verificationId: requestId,
         deepLink: null,
         data: { method: request.method, cityId: request.cityId },

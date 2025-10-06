@@ -12,8 +12,8 @@ export default async function OverviewPage() {
   const user = await requireUser();
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="w-full max-w-7xl mx-auto">
+      <div className="my-6">
         <h1 className="text-2xl font-bold tracking-tight">Overview</h1>
         <p className="text-muted-foreground">Your ad performance and activity summary</p>
       </div>

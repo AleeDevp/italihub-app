@@ -22,7 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
-import { useCities } from '@/contexts/cities-context';
+import { useCities, useCityName } from '@/contexts/cities-context';
 import { useUserIdAvailability } from '@/hooks/use-userid-availability';
 import { User } from '@/lib/auth';
 import { profileBasicsSchema } from '@/lib/schemas/dashboard';
@@ -52,10 +52,9 @@ import { ProfileAvatarSection } from './profile-avatar-section';
 
 interface ProfileContentProps {
   user: User;
-  cityName?: string;
 }
 
-export function ProfileContent({ user, cityName }: ProfileContentProps) {
+export function ProfileContent({ user }: ProfileContentProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -65,6 +64,8 @@ export function ProfileContent({ user, cityName }: ProfileContentProps) {
     telegram: user.telegramHandle || '',
   });
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+
+  const cityName = useCityName(user.cityId);
 
   // Track original values to detect changes
   const originalData = React.useMemo(
@@ -275,9 +276,9 @@ export function ProfileContent({ user, cityName }: ProfileContentProps) {
   };
 
   return (
-    <div className="space-y-6 flex flex-wrap items-center justify-center ">
+    <div className="space-y-6 flex-wrap ">
       {/* Main Profile Card */}
-      <Card className="w-full max-w-3xl mx-auto">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserIcon className="h-5 w-5" />
@@ -290,6 +291,7 @@ export function ProfileContent({ user, cityName }: ProfileContentProps) {
             {/* Avatar */}
             <ProfileAvatarSection
               userId={user.userId as string}
+              isVerified={user.verified as boolean}
               userName={user.name}
               currentImageKey={user.image}
             />

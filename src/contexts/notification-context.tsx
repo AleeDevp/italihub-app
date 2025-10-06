@@ -1,5 +1,6 @@
 'use client';
 
+import { showNotificationToast } from '@/components/notifications/notification-toast';
 import { useSession } from '@/lib/auth-client';
 import {
   createContext,
@@ -217,19 +218,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     try {
       const data = JSON.parse(ev.data);
       dispatch({ type: 'ADD_NOTIFICATION', item: data });
-      // toast
-      toast(data.title, {
-        description: data.body,
-        duration: 5000,
-        action: data.deepLink
-          ? {
-              label: 'Open',
-              onClick: () => {
-                if (data.deepLink) window.location.href = data.deepLink;
-              },
-            }
-          : undefined,
-      });
+      // Themed toast
+      showNotificationToast(data);
     } catch {}
   }, []);
 

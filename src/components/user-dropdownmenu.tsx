@@ -35,22 +35,24 @@ export function UserDropDownMenu({ user }: Props) {
 
   const name = user.name ?? 'User';
   const email = user.email ?? '';
-  const isAdmin = user.role === 'admin';
+  const isModerator = user.role === 'ADMIN' || user.role === 'MODERATOR';
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="cursor-pointer border-1 relative overflow-hidden shadow-lg rounded-full ">
-          <UserAvatar image={user.image ?? null} className="h-9 w-9" />
-          {/* <div className="absolute h-1/4 w-full bg-white rounded-t-3xl border-t-1 border-t-white bottom-0">
-            <ChevronDown className="size-3 place-self-center text-center text-primary -mt-0.5" />
-          </div> */}
+        <button className="cursor-pointer relative ">
+          <UserAvatar image={user.image ?? null} size={96} isVerified={user.verified as boolean} />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-64 rounded-2xl" align="start" sideOffset={12} forceMount>
         <DropdownMenuLabel className="font-normal p-3">
           <div className="flex items-center gap-3">
-            <UserAvatar image={user.image ?? null} alt={name} className="h-9 w-9" />
+            <UserAvatar
+              image={user.image ?? null}
+              alt={name}
+              className="h-9 w-9"
+              isVerified={!!user.verified}
+            />
             <div className="flex min-w-0 flex-col">
               <p className="truncate text-sm font-medium leading-none">{name}</p>
               {email && <p className="truncate text-xs text-muted-foreground">{email}</p>}
@@ -70,9 +72,9 @@ export function UserDropDownMenu({ user }: Props) {
             <span>Settings</span>
           </Link>
         </DropdownMenuItem>
-        {isAdmin && (
+        {isModerator && (
           <DropdownMenuItem asChild>
-            <Link href="/admin-panel" className="flex items-center">
+            <Link href="/panel" className="flex items-center">
               <ShieldUser className="mr-2 h-4 w-4" />
               <span>Admin Panel</span>
             </Link>

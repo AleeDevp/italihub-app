@@ -7,8 +7,8 @@ export default async function SupportPage() {
   const user = await requireUser();
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="w-full max-w-7xl mx-auto">
+      <div className="my-6">
         <h1 className="text-3xl font-bold">Help & Support</h1>
         <p className="text-muted-foreground">Get help with your account or report an issue.</p>
       </div>

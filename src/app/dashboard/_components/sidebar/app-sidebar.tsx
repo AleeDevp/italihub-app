@@ -22,7 +22,6 @@ import {
 import { useSession } from '@/lib/auth-client';
 import Image from 'next/image';
 import { NavAccount } from './nav-account';
-import { NavActivity } from './nav-activity';
 import { NavAdsManagement } from './nav-ads-management';
 import { NavMain } from './nav-main';
 import { NavOthers } from './nav-others';
@@ -104,7 +103,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
         <NavAdsManagement items={data.navAdsManagement} />
         <NavAccount items={data.navAccount} />
-        <NavActivity items={data.navActivity} />
+        {/* <NavActivity items={data.navActivity} /> */}
         <NavOthers items={data.navOthers} />
       </SidebarContent>
       <SidebarFooter></SidebarFooter>

@@ -325,6 +325,7 @@ const VerificationRequestRow = memo(
               alt={request.user.name ?? 'User'}
               className="h-8 w-8"
               size={64}
+              isVerified={Boolean((request as any).user?.verified)}
             />
             <div>
               <div className="font-medium text-gray-900">
@@ -373,6 +374,7 @@ const VerificationRequestRow = memo(
               alt={request.user.name ?? 'User'}
               className="h-8 w-8"
               size={64}
+              isVerified={Boolean((request as any).user?.verified)}
             />
             <div>
               <div className="text-sm font-medium text-gray-900">
@@ -1190,6 +1192,7 @@ export default function VerificationRequestsPage() {
                         alt={details.user.name ?? 'User'}
                         className="h-56 w-56 md:h-64 md:w-64 rounded-full ring-2 ring-gray-200"
                         size={320}
+                        isVerified={Boolean((details as any).user?.verified)}
                       />
                       <div className="w-full">
                         <div>
