@@ -1,5 +1,4 @@
 import type { AdCategory, AdStatus } from '@/generated/prisma';
-import { prisma } from '@/lib/db';
 
 export type UserAdListParams = {
   userId: string;
@@ -87,80 +86,4 @@ export async function listUserAds(params: UserAdListParams): Promise<{
     page: params.page || 1,
     pageSize: params.pageSize || 12,
   };
-}
-
-export async function getAdForOwner(adId: number, userId: string) {
-  const ad = await prisma.ad.findFirst({
-    where: { id: adId, userId },
-    include: {
-      city: true,
-      marketplace: true,
-      service: true,
-      housing: true,
-      transportation: true,
-      exchange: true,
-      mediaAssets: true,
-    },
-  });
-
-  if (!ad) {
-    throw new Error('Ad not found or access denied');
-  }
-
-  // Get the appropriate child based on category
-  let child: any = null;
-  switch (ad.category) {
-    case 'MARKETPLACE':
-      child = ad.marketplace;
-      break;
-    case 'SERVICES':
-      child = ad.service;
-      break;
-    case 'HOUSING':
-      child = ad.housing;
-      break;
-    case 'TRANSPORTATION':
-      child = ad.transportation;
-      break;
-    case 'CURRENCY':
-      child = ad.exchange;
-      break;
-  }
-
-  return { ad, child };
-}
-
-export async function deleteAd(adId: number, userId: string): Promise<void> {
-  // Verify ownership first
-  const ad = await prisma.ad.findFirst({
-    where: { id: adId, userId },
-    select: { id: true },
-  });
-
-  if (!ad) {
-    throw new Error('Ad not found or access denied');
-  }
-
-  // Delete the ad (cascade will handle child tables and media)
-  await prisma.ad.delete({
-    where: { id: adId },
-  });
-}
-
-// TODO: Implement edit/renew functions based on specific ad types
-// These would be implemented when we have the full ad creation/editing forms
-export async function editAdMarketplace(params: any): Promise<void> {
-  throw new Error('Not implemented yet');
-}
-
-export async function editAdService(params: any): Promise<void> {
-  throw new Error('Not implemented yet');
-}
-
-export async function renewAdHousing(params: any): Promise<void> {
-  throw new Error('Not implemented yet');
-}
-
-export async function renewAdTransportation(params: any): Promise<void> {
-  throw new Error('Not implemented yet');
 }
