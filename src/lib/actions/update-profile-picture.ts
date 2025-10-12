@@ -1,8 +1,8 @@
 'use server';
 
-import { requireUser } from '@/lib/auth';
-import { getUserProfilePicture, updateUserProfilePicture } from '@/lib/dal/user';
-import { AvatarService } from '@/lib/image-utils-server';
+import { getUserProfilePicture, updateUserProfilePicture } from '@/data/user/user.dal';
+import { requireUser } from '@/lib/auth/server';
+import { AvatarService } from '@/lib/image_system/image-utils-server';
 
 export type UpdateProfilePictureResult =
   | { ok: true; data: { imageKey: string } }

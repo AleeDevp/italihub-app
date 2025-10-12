@@ -1,4 +1,4 @@
-import { isUserIdAvailable } from '@/lib/dal/user';
+import { isUserIdAvailable } from '@/data/user/user.dal';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {

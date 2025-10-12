@@ -5,9 +5,9 @@
  * into your Next.js server actions.
  */
 
-import { auditServerAction, logAuditBatch, logFailure, logSuccess } from '@/lib/audit';
-import { getEnhancedAuditContext } from '@/lib/audit-context';
-import { requireUser } from '@/lib/require-user';
+import { auditServerAction, logAuditBatch, logFailure, logSuccess } from '@/lib/audit/audit';
+import { getEnhancedAuditContext } from '@/lib/audit/audit-context';
+import { requireUser } from '@/lib/auth/server';
 
 // ============================================================================
 // PATTERN 1: Wrapper Function (Recommended)

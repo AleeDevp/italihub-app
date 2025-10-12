@@ -6,7 +6,7 @@ import {
   type FileMetadata,
   type FileWithPreview,
   type ImageType,
-} from '@/lib/image-utils-client';
+} from '@/lib/image_system/image-utils-client';
 import type React from 'react';
 import {
   useCallback,
@@ -396,4 +396,4 @@ export const useFileUpload = (
 };
 
 // Re-export for backward compatibility
-export { formatBytes, formatFileSize } from '@/lib/image-utils-client';
+export { formatBytes, formatFileSize } from '@/lib/image_system/image-utils-client';

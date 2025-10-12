@@ -6,14 +6,14 @@
  * - PATCH: Approve/Reject verification request
  */
 
-import * as Enum from '@/generated/enums';
-import type { VerificationRejectionCode } from '@/generated/prisma';
 import {
   getVerificationRequestById,
   moderatorApproveVerification,
   moderatorRejectVerification,
-} from '@/lib/dal/moderator-verification';
-import { getServerSession } from '@/lib/get-session';
+} from '@/data/moderator/verification.dal';
+import * as Enum from '@/generated/enums';
+import type { VerificationRejectionCode } from '@/generated/prisma';
+import { getServerSession } from '@/lib/auth/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 

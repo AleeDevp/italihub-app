@@ -17,7 +17,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { cropImageToBlob, validateImageFile, type CropArea } from '@/lib/image-utils-client';
+import {
+  cropImageToBlob,
+  validateImageFile,
+  type CropArea,
+} from '@/lib/image_system/image-utils-client';
 import { Step4Schema } from '@/lib/schemas/complete-profile-schema';
 import * as React from 'react';
 import { UseFormReturn, useWatch } from 'react-hook-form';

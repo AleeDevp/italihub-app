@@ -1,5 +1,5 @@
 import { NotificationForm } from '@/app/(admin-moderator)/panel/Send-notification/send-form';
-import { requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth/server';
 import { redirect } from 'next/navigation';
 
 export const metadata = {

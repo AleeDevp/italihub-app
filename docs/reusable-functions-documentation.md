@@ -1108,7 +1108,7 @@ export default async function HomePage() {
       {user ? (
         <p>Hello, {user.name}! <a href="/dashboard">Go to Dashboard</a></p>
       ) : (
-        <p><a href="/signin">Sign In</a> to access your dashboard</p>
+        <p><a href="/login">Sign In</a> to access your dashboard</p>
       )}
     </div>
   );

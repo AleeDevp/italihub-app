@@ -1,5 +1,5 @@
-import { getVerificationById, getVerificationStorageKey } from '@/lib/dal/verification';
-import { requireUser } from '@/lib/require-user';
+import { getVerificationById, getVerificationStorageKey } from '@/data/user/verification.dal';
+import { requireUser } from '@/lib/auth/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(

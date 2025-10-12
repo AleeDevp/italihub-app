@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth/server';
 import { markNotificationsAsRead } from '@/lib/services/notification-service';
 import { NextRequest } from 'next/server';
 

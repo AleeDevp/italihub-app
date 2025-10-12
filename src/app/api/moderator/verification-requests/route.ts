@@ -5,20 +5,22 @@
  * for the moderator panel.
  */
 
+import {
+  getVerificationRequestsForModerators,
+  getVerificationStats,
+  VerificationSearchParams,
+} from '@/data/moderator/verification.dal';
 import * as Enum from '@/generated/enums';
 import type {
   VerificationMethod,
   VerificationRejectionCode,
   VerificationStatus,
 } from '@/generated/prisma';
-import {
-  getVerificationRequestsForModerators,
-  getVerificationStats,
-  VerificationSearchParams,
-} from '@/lib/dal/moderator-verification';
-import { getServerSession } from '@/lib/get-session';
+import { getServerSession } from '@/lib/auth/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+
+// Import centralized auth barrel
 
 // Validation schema for search parameters
 const searchParamsSchema = z.object({

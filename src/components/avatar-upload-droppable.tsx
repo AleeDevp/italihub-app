@@ -4,7 +4,7 @@ import { CircleUserRoundIcon, XIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { useFileUpload } from '@/hooks/use-file-upload';
-import type { FileWithPreview } from '@/lib/image-utils-client';
+import type { FileWithPreview } from '@/lib/image_system/image-utils-client';
 
 type AvatarUploadDroppableProps = {
   // If provided, this URL will be used for preview instead of internal state

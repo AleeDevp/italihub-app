@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth/server';
 import { redirect } from 'next/navigation';
 
 export default async function AuthLayout({
@@ -14,9 +14,7 @@ export default async function AuthLayout({
 
   return (
     <main>
-      <div className="flex flex-col min-h-[calc(100vh-4rem)] items-center justify-center p-6 md:p-10">
-        {children}
-      </div>
+      <div className="flex min-h-svh items-center justify-center px-4">{children}</div>
     </main>
   );
 }

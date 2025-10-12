@@ -1,10 +1,10 @@
-import * as Enum from '@/generated/enums';
-import type { VerificationRejectionCode } from '@/generated/prisma';
-import { auth } from '@/lib/auth';
 import {
   bulkApproveVerifications,
   bulkRejectVerifications,
-} from '@/lib/dal/moderator-verification';
+} from '@/data/moderator/verification.dal';
+import * as Enum from '@/generated/enums';
+import type { VerificationRejectionCode } from '@/generated/prisma';
+import { auth } from '@/lib/auth/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 

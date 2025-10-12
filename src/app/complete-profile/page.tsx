@@ -14,7 +14,7 @@ import {
   StepperTrigger,
 } from '@/components/ui/stepper';
 import { completeProfileAction } from '@/lib/actions/complete-profile';
-import { useSession } from '@/lib/auth-client';
+import { useSession } from '@/lib/auth/client';
 import { CompleteProfileSchema } from '@/lib/schemas/complete-profile-schema';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -87,8 +87,9 @@ export default function CompleteProfilePage() {
       }
       refetch(); // Update session with new user data
       setStatus('success');
-    } catch (e: any) {
-      setErrorText(e?.message || 'Unexpected error');
+    } catch (e) {
+      console.error(e);
+      setErrorText('Unexpected error');
       setStatus('error');
     }
   }, []);

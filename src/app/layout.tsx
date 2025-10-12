@@ -3,10 +3,12 @@ import type { Metadata, Viewport } from 'next';
 
 import localFont from 'next/font/local';
 
+import { OfflineBanner } from '@/components/network-status-monitor';
 import { CitiesProvider } from '@/contexts/cities-context';
 import { NotificationProvider } from '@/contexts/notification-context';
 import { getAllCities } from '@/lib/cache/city-cache';
 import { QueryProvider } from '@/providers/query-provider';
+import { ThemeProvider } from 'next-themes';
 import './globals.css';
 
 // Define the Fredoka font (variable font support is automatic)
@@ -41,21 +43,17 @@ export default async function RootLayout({
   return (
     <html lang="en" className={fredoka.variable} suppressHydrationWarning>
       <body className={`${fredoka.className} antialiased`}>
-        {/* <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        > */}
-        <QueryProvider>
-          <NotificationProvider>
-            <CitiesProvider cities={cities} storageMode="session">
-              {children}
-            </CitiesProvider>
-          </NotificationProvider>
-        </QueryProvider>
-        <Toaster position="top-center" />
-        {/* </ThemeProvider> */}
+        <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
+          <QueryProvider>
+            <NotificationProvider>
+              <CitiesProvider cities={cities} storageMode="session">
+                <OfflineBanner />
+                {children}
+              </CitiesProvider>
+            </NotificationProvider>
+          </QueryProvider>
+          <Toaster position="top-center" />
+        </ThemeProvider>
       </body>
     </html>
   );

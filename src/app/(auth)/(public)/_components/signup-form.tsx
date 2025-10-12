@@ -1,11 +1,11 @@
 'use client';
 
+import { authToasts } from '@/lib/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { GoogleSignInButton } from '@/app/(auth)/(public)/_components/google-signin-button';
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { signUp } from '@/lib/actions/auth-actions';
+import { authErrorMessage } from '@/lib/auth/auth-errors';
 
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -34,7 +35,6 @@ type SignupFormValues = z.infer<typeof signupFormSchema>;
 
 export function SignupForm({ className, ...props }: React.ComponentProps<'div'>) {
   const router = useRouter();
-  // const { refetch } = useSession();
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -50,16 +50,16 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
 
   async function onSubmit(values: SignupFormValues) {
     form.clearErrors();
-    // Use startTransition to properly handle the async action
+
     startTransition(async () => {
       const result = await signUp(values.email, values.password, values.name);
-      if (result.success) {
-        toast.success(result.message);
-        setSuccess(result.message);
-        // refetch();
-        // router.replace('/');
+
+      if (result.ok) {
+        authToasts.signedUp();
+        setSuccess('Account created successfully! Please check your email to verify your account.');
       } else {
-        toast.error(result.message);
+        const message = authErrorMessage(result);
+        authToasts.signUpFailed(message);
       }
     });
   }
@@ -71,34 +71,35 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
           {!!!success ? (
             <div className="p-6 md:p-8">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                  aria-busy={isPending}
+                >
                   <div className="flex flex-col items-center text-center">
                     <h1 className="text-2xl font-bold">Join ItaliHub</h1>
                     <p className="text-muted-foreground text-balance">
                       Create your account to start your Italian journey
                     </p>
                   </div>
-
-                  <div className="">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Mario"
-                              type="text"
-                              {...field}
-                              disabled={isPending || !!success}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Mario"
+                            type="text"
+                            {...field}
+                            disabled={isPending || !!success}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <FormField
                     control={form.control}
@@ -157,7 +158,13 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
                     )}
                   />
 
-                  <Button type="submit" className="w-full" disabled={isPending || !!success}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isPending || !!success}
+                    aria-disabled={isPending || !!success}
+                    aria-busy={isPending}
+                  >
                     {isPending ? <LoadingSpinner /> : 'Create account'}
                   </Button>
 
@@ -234,14 +241,6 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
                     Resend verification email
                   </button>
                 </p> */}
-                <p>
-                  <Link
-                    href="/signin"
-                    className="text-green-600 hover:text-green-700 underline underline-offset-2 font-medium"
-                  >
-                    Back to Sign In
-                  </Link>
-                </p>
               </div>
             </div>
           )}

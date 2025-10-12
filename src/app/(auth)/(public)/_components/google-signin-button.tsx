@@ -2,10 +2,10 @@
 
 import LoadingSpinner from '@/components/loading-spinner';
 import { Button } from '@/components/ui/button';
-import { signIn } from '@/lib/auth-client'; // Adjust path
+import { authToasts, signIn } from '@/lib/auth/client';
 import Image from 'next/image';
 import { useTransition } from 'react';
-import { toast } from 'sonner';
+
 export function GoogleSignInButton({ disabled }: { disabled?: boolean }) {
   const [isSocialPending, startSocialTransition] = useTransition();
 
@@ -15,35 +15,35 @@ export function GoogleSignInButton({ disabled }: { disabled?: boolean }) {
         const { data, error } = await signIn.social(
           {
             provider: 'google',
-            callbackURL: '/', // Redirect on success
-            errorCallbackURL: '/signin?error=google-failed', // Redirect on error (optional; handle query params on sign-in page)
-            newUserCallbackURL: '/welcome', // Redirect for new users (optional)
+            callbackURL: '/',
+            errorCallbackURL: '/signin?error=google-failed',
+            newUserCallbackURL: '/welcome',
           },
           {
             onRequest: () => {
-              toast.loading('Redirecting to Google...');
+              authToasts.loading('Redirecting to Google...');
             },
-            onSuccess: (ctx) => {
-              toast.success('Signed in with Google successfully!');
-              // No need for manual redirect; handled by callbackURL
+            onSuccess: () => {
+              authToasts.dismiss();
+              authToasts.signedIn();
             },
-            onError: (ctx) => {
-              toast.error(ctx.error.message || 'Google sign-in failed. Please try again.');
+            onError: (ctx: any) => {
+              authToasts.dismiss();
+              const errorMessage = ctx?.error?.message || 'Failed to sign in with Google';
+              authToasts.signInFailed(errorMessage);
             },
           }
         );
 
         if (error) {
-          // Fallback error handling if onError doesn't catch it
-          toast.error(error.message || 'An unexpected error occurred.');
+          authToasts.dismiss();
+          const errorMessage = error.message || 'Failed to sign in with Google';
+          authToasts.signInFailed(errorMessage);
         }
-        // else if (data) {
-        //   // Additional success handling if needed
-        //   console.log("User data:", data.user);
-        // }
       } catch (err) {
-        // Catch any unexpected errors (e.g., network)
-        toast.error((err as Error).message || 'Failed to initiate Google sign-in.');
+        authToasts.dismiss();
+        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+        authToasts.signInFailed(errorMessage);
       }
     });
   };

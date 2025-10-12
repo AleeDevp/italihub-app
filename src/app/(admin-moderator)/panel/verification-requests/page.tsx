@@ -29,7 +29,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/user-avatar';
 import { useCities } from '@/contexts/cities-context';
-import { resolveImageUrl } from '@/lib/image-utils-client';
+import { resolveImageUrl } from '@/lib/image_system/image-utils-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {

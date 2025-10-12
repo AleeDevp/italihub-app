@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth/server';
 import { prisma } from '@/lib/db';
 import { createNotification } from '@/lib/services/notification-service';
 import { NextRequest } from 'next/server';

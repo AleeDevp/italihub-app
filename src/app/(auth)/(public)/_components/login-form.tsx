@@ -1,11 +1,11 @@
 'use client';
 
+import { authToasts } from '@/lib/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,8 @@ import { requestVerificationEmail } from '@/app/(auth)/(public)/actions';
 import LoadingSpinner from '@/components/loading-spinner';
 import { PasswordInput } from '@/components/ui/password-input';
 import { signIn } from '@/lib/actions/auth-actions';
-import { useSession } from '@/lib/auth-client';
+import { authErrorMessage } from '@/lib/auth/auth-errors';
+import { useSession } from '@/lib/auth/client';
 import { loginFormSchema } from '@/lib/schemas/auth_validation';
 import { MailCheck } from 'lucide-react';
 import Image from 'next/image';
@@ -35,12 +36,11 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
   const router = useRouter();
-  const { refetch } = useSession(); // For refetching session after success
+  const { refetch } = useSession();
 
-  const [error, setError] = useState(null as string | null);
-
-  const [resendEmailActive, setResendEmailActive] = useState(false as boolean);
-  const [resendEmailSuccess, setResendEmailSuccess] = useState(false as boolean);
+  const [error, setError] = useState<string | null>(null);
+  const [resendEmailActive, setResendEmailActive] = useState(false);
+  const [resendEmailSuccess, setResendEmailSuccess] = useState(false);
 
   const [isPendingSignIn, startTransitionSignIn] = useTransition();
   const [isPendingResend, startTransitionResend] = useTransition();
@@ -58,20 +58,32 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
     setError(null);
     setResendEmailActive(false);
     setResendEmailSuccess(false);
-    // Call inside a transition so isPendingSignIn updates correctly (React 19 requirement)
+
     startTransitionSignIn(async () => {
       const result = await signIn(values.email, values.password);
-      if (result.success) {
-        toast.success(result.message || 'Signed in successfully!');
+
+      if (result.ok) {
+        authToasts.signedIn();
         refetch();
         router.replace('/');
+        return;
       }
-      if (!result.success) {
-        if (result.statusCode === 403) {
-          console.log('Need to verify your email first!');
+
+      if (!result.ok) {
+        const { message: errorMessage, code } = result.error;
+
+        // Check if email verification is required
+        if (
+          code === 'EMAIL_NOT_VERIFIED' ||
+          errorMessage.toLowerCase().includes('verify your email')
+        ) {
           setResendEmailActive(true);
-          setError(result.message || 'Please verify your email.');
-        } else setError(result.message);
+          setError(errorMessage);
+          authToasts.emailVerificationRequired();
+        } else {
+          setError(errorMessage);
+          authToasts.signInFailed(errorMessage);
+        }
       }
     });
   }
@@ -80,13 +92,15 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
     setError(null);
     setResendEmailSuccess(false);
     setResendEmailActive(false);
-    // Call inside a transition so isPendingResend updates correctly (React 19 requirement)
+
     startTransitionResend(async () => {
       const result = await requestVerificationEmail(form.getValues('email'));
-      if (result.success) {
+
+      if (result.ok) {
         setResendEmailSuccess(true);
       } else {
-        setError(result.message || 'Something went wrong, please try again later.');
+        const message = authErrorMessage(result, 'Something went wrong, please try again later.');
+        setError(message);
       }
     });
   };
@@ -99,7 +113,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
         <CardContent className="grid p-0 md:grid-cols-2">
           <div className="p-6 md:p-8">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+                aria-busy={isPendingSignIn}
+              >
                 <div className="flex flex-col items-center text-center">
                   <h1 className="text-2xl font-bold">Welcome back</h1>
                   <p className="text-muted-foreground text-balance">
@@ -183,6 +201,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
                   type="submit"
                   className="w-full"
                   disabled={resendEmailSuccess || isPendingSignIn}
+                  aria-disabled={resendEmailSuccess || isPendingSignIn}
+                  aria-busy={isPendingSignIn}
                 >
                   {isPendingSignIn ? <LoadingSpinner /> : 'Sign in'}
                 </Button>

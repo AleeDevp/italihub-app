@@ -1,12 +1,12 @@
 'use server';
 
+import { isUserIdAvailable } from '@/data/user/user.dal';
 import type { AuditAction, AuditActorRole, AuditEntityType } from '@/generated/enums';
-import { auditServerAction } from '@/lib/audit';
-import { getEnhancedAuditContext } from '@/lib/audit-context';
-import { requireUser } from '@/lib/auth';
-import { isUserIdAvailable } from '@/lib/dal/user';
+import { auditServerAction } from '@/lib/audit/audit';
+import { getEnhancedAuditContext } from '@/lib/audit/audit-context';
+import { requireUser } from '@/lib/auth/server';
 import { prisma } from '@/lib/db';
-import { AvatarService } from '@/lib/image-utils-server';
+import { AvatarService } from '@/lib/image_system/image-utils-server';
 import { CompleteProfileSchema } from '@/lib/schemas/complete-profile-schema';
 import { z } from 'zod';
 
@@ -127,7 +127,7 @@ export async function completeProfileAction(formData: FormData): Promise<Complet
     } catch (e: any) {
       // Compensation: remove the just-uploaded image if DB write failed
       if (newImageKey) {
-        const { deleteCloudinaryImage } = await import('@/lib/image-utils-server');
+        const { deleteCloudinaryImage } = await import('@/lib/image_system/image-utils-server');
         await deleteCloudinaryImage(newImageKey).catch(() => {});
       }
 

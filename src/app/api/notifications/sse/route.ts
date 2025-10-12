@@ -1,4 +1,4 @@
-import { requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth/server';
 import { notificationBroker } from '@/lib/sse/notification-broker';
 import { NextRequest } from 'next/server';
 

@@ -1,16 +1,10 @@
-import { requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth/server';
 import { cn } from '@/lib/utils';
-import { forbidden, unauthorized } from 'next/navigation';
+import { forbidden } from 'next/navigation';
 import { ReactNode } from 'react';
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
-  let user;
-  try {
-    user = await requireUser();
-  } catch {
-    unauthorized();
-  }
-
+  const user = await requireUser();
   if (user.role === 'USER') forbidden();
 
   return (

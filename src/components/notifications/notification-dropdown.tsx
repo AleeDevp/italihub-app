@@ -1,8 +1,9 @@
 'use client';
 
+import { LoadingSpinner } from '@/components/loading-spinner';
 import { NotificationListItem } from '@/components/notifications/notification-variants';
 import { useNotifications } from '@/contexts/notification-context';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function NotificationDropdown({
   onClose,
@@ -13,6 +14,7 @@ export function NotificationDropdown({
 }) {
   const { notifications, markRead, loadMore, hasMore, isLoading, loadInitial } = useNotifications();
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Keep latest notifications and markRead in refs so cleanup can use current values
   const latestRef = useRef({ notifications });
@@ -84,7 +86,16 @@ export function NotificationDropdown({
       ) : (
         <ul className="space-y-1 p-2">
           {notifications.slice(0, 15).map((n) => (
-            <NotificationListItem key={n.id} item={n} />
+            <NotificationListItem
+              key={n.id}
+              item={n}
+              onNavigate={() => {
+                // Mark the clicked notification as read before navigating
+                markRead([n.id]);
+                // Close the dropdown for immediate UI feedback
+                onClose();
+              }}
+            />
           ))}
         </ul>
       )}
@@ -92,8 +103,27 @@ export function NotificationDropdown({
         <div className="p-4 text-sm text-muted-foreground">No notifications yet</div>
       )}
       {hasMore && (
-        <button className="w-full p-3 text-sm hover:bg-accent" onClick={() => loadMore()}>
-          Load more
+        <button
+          className="w-full p-3 text-sm hover:bg-accent inline-flex items-center justify-center gap-2 disabled:opacity-60"
+          onClick={async () => {
+            if (loadingMore) return;
+            setLoadingMore(true);
+            try {
+              await loadMore();
+            } finally {
+              setLoadingMore(false);
+            }
+          }}
+          disabled={loadingMore}
+        >
+          {loadingMore ? (
+            <>
+              <LoadingSpinner size="sm" variant="ring" aria-hidden />
+              <span>Loading…</span>
+            </>
+          ) : (
+            'Load more'
+          )}
         </button>
       )}
       <div className="p-2 text-right">

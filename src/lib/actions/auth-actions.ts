@@ -1,92 +1,82 @@
 'use server';
 
-import { APIError } from 'better-auth';
+import {
+  authErrorFrom,
+  authSuccess,
+  parseAuthError,
+  type AuthResult,
+} from '@/lib/auth/auth-errors';
+import { auth } from '@/lib/auth/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { AuthAuditor } from '../audit';
-import { auth } from '../auth';
+import { AuthAuditor } from '../audit/audit';
 
-export type LoginState = {
-  success: boolean;
-  statusCode?: number;
-  message: string | null;
-};
+export type AuthActionResult<T = void> = AuthResult<T>;
 
-export const signUp = async (email: string, password: string, name: string) => {
+/**
+ * Sign up a new user with email and password
+ */
+export const signUp = async (
+  email: string,
+  password: string,
+  name: string
+): Promise<AuthActionResult> => {
+  const requestHeaders = await headers();
+
   try {
-    const result = await auth.api.signUpEmail({
+    await auth.api.signUpEmail({
       body: {
         email,
         password,
         name,
         callbackURL: '/email-verified',
       },
+      headers: requestHeaders,
     });
 
-    // Success case is handled by database hooks in auth.ts
-    return {
-      success: true,
-      message: 'Signed up successfully!',
-    };
-  } catch (e) {
-    // Log failure
-    // const errorCode = e instanceof APIError ? `AUTH_${e.statusCode || 'ERROR'}` : 'SIGNUP_FAILURE';
-    const errorMessage =
-      e instanceof APIError ? e.message : 'Something went wrong, try again later.';
-
-    // await AuthAuditor.logRegistrationFailure(email, errorCode, {
-    //   failureReason: errorMessage,
-    //   provider: 'email',
-    // });
-
-    return { success: false, message: errorMessage };
+    return authSuccess();
+  } catch (error) {
+    return authErrorFrom(error, 'Unable to complete sign up');
   }
 };
 
-export const signIn = async (email: string, password: string) => {
+/**
+ * Sign in a user with email and password
+ */
+export const signIn = async (email: string, password: string): Promise<AuthActionResult> => {
+  const requestHeaders = await headers();
+
   try {
-    const result = await auth.api.signInEmail({
+    await auth.api.signInEmail({
       body: {
         email,
         password,
         callbackURL: '/',
       },
+      headers: requestHeaders,
     });
 
-    // Success case is handled by database hooks in auth.ts
-    return { success: true, message: 'Sign-in successful' };
-  } catch (e) {
-    // Log failure
-    const errorCode = e instanceof APIError ? `AUTH_${e.statusCode || 'ERROR'}` : 'SIGNIN_FAILURE';
-    let errorMessage = 'Something went wrong, try again later.';
-    let statusCode;
+    return authSuccess();
+  } catch (error) {
+    const authError = parseAuthError(error, 'Unable to sign in');
 
-    if (e instanceof APIError) {
-      if (e.statusCode === 403) {
-        errorMessage = 'Please verify your email.';
-        statusCode = 403;
-      } else {
-        errorMessage = e.message;
-      }
-    }
-
-    await AuthAuditor.logLoginFailure(email, errorCode, {
-      failureReason: errorMessage,
+    await AuthAuditor.logLoginFailure(email, authError.code ?? 'SIGNIN_FAILURE', {
+      failureReason: authError.message,
       provider: 'email',
     });
 
-    if (statusCode === 403) {
-      return {
-        success: false,
-        statusCode: 403,
-        message: errorMessage,
-      };
-    }
-    return { success: false, message: errorMessage };
+    return {
+      ok: false,
+      error: authError,
+    };
   }
 };
 
-export const signInSocial = async (provider: 'google' | 'facebook') => {
+/**
+ * Sign in with a social provider (Google, Facebook)
+ * Redirects to the provider's OAuth page
+ */
+export const signInSocial = async (provider: 'google' | 'facebook'): Promise<void> => {
   try {
     const { url } = await auth.api.signInSocial({
       body: {
@@ -94,89 +84,112 @@ export const signInSocial = async (provider: 'google' | 'facebook') => {
         callbackURL: '/',
       },
     });
+
     if (url) {
       redirect(url);
     }
-  } catch (e) {
-    // Log OAuth failure
-    const errorCode =
-      e instanceof APIError ? `OAUTH_${e.statusCode || 'ERROR'}` : 'OAUTH_SIGNIN_FAILURE';
-    const errorMessage = e instanceof APIError ? e.message : 'OAuth sign-in failed';
+  } catch (error) {
+    const authError = parseAuthError(error, 'OAuth sign-in failed');
 
+    // Log OAuth failure for audit purposes
     await AuthAuditor.logOAuthFailure(
       provider === 'google' ? 'OAUTH_LINK_GOOGLE' : 'OAUTH_LINK_FACEBOOK',
-      null, // No user ID on failure
+      null,
       provider,
-      errorCode,
+      authError.code ?? 'OAUTH_SIGNIN_FAILURE',
       {
-        failureReason: errorMessage,
+        failureReason: authError.message,
         provider,
       }
     );
 
-    throw e;
+    throw error;
   }
 };
 
-export const signOut = async () => {
+/**
+ * Sign out the current user
+ */
+export const signOut = async (): Promise<AuthActionResult> => {
+  const requestHeaders = await headers();
+
   try {
-    // Success case is handled by database hooks in auth.ts when session is deleted
-    await auth.api.signOut({ headers: await headers() });
-  } catch (e) {
-    // Log logout failure if needed
-    const errorCode = e instanceof APIError ? `AUTH_${e.statusCode || 'ERROR'}` : 'SIGNOUT_FAILURE';
-    console.error('Sign out failed:', e);
-    throw e;
+    await auth.api.signOut({ headers: requestHeaders });
+    return authSuccess();
+  } catch (error) {
+    const authError = parseAuthError(error, 'Sign out failed');
+    console.error('[Sign Out] Failed:', authError);
+    return {
+      ok: false,
+      error: authError,
+    };
   }
 };
 
-export const linkSocialAccount = async () => {
+/**
+ * Link a social account (Google) to the current user's account
+ */
+export const linkSocialAccount = async (): Promise<AuthActionResult> => {
+  const requestHeaders = await headers();
+
   try {
-    const result = await auth.api.linkSocialAccount({
+    await auth.api.linkSocialAccount({
       body: {
         provider: 'google',
       },
-      headers: await headers(),
+      headers: requestHeaders,
     });
 
-    // Get current user for audit logging
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await auth.api.getSession({ headers: requestHeaders });
     if (session?.user) {
       await AuthAuditor.logOAuthSuccess('OAUTH_LINK_GOOGLE', session.user.id, 'google', {
         accountLinked: true,
       });
     }
 
-    return result;
-  } catch (e) {
-    // Get current user for audit logging
-    const session = await auth.api.getSession({ headers: await headers() });
-    const errorCode =
-      e instanceof APIError ? `OAUTH_${e.statusCode || 'ERROR'}` : 'OAUTH_LINK_FAILURE';
-    const errorMessage = e instanceof APIError ? e.message : 'OAuth linking failed';
+    return authSuccess();
+  } catch (error) {
+    const authError = parseAuthError(error, 'Failed to link account');
+    let sessionUserId: string | null = null;
+
+    try {
+      const session = await auth.api.getSession({ headers: requestHeaders });
+      sessionUserId = session?.user?.id ?? null;
+    } catch {
+      sessionUserId = null;
+    }
 
     await AuthAuditor.logOAuthFailure(
       'OAUTH_LINK_GOOGLE',
-      session?.user?.id || null,
+      sessionUserId,
       'google',
-      errorCode,
+      authError.code ?? 'OAUTH_LINK_FAILURE',
       {
-        failureReason: errorMessage,
+        failureReason: authError.message,
       }
     );
 
-    throw e;
+    return {
+      ok: false,
+      error: authError,
+    };
   }
 };
 
-export const getAccountInfo = async (accountId: string) => {
+/**
+ * Get account information for a specific account ID
+ */
+export const getAccountInfo = async (accountId: string): Promise<AuthActionResult> => {
+  const requestHeaders = await headers();
+
   try {
-    const result = await auth.api.accountInfo({
+    await auth.api.accountInfo({
       body: { accountId },
-      headers: await headers(),
+      headers: requestHeaders,
     });
-    return result;
-  } catch (e) {
-    throw e;
+
+    return authSuccess();
+  } catch (error) {
+    return authErrorFrom(error, 'Failed to retrieve account info');
   }
 };

@@ -1,16 +1,16 @@
 'use server';
 
-import type { VerificationFileRole, VerificationMethod } from '@/generated/prisma';
-import { auditServerAction } from '@/lib/audit';
 import {
   addVerificationFile,
   getUserVerificationHistory,
   removeVerificationFile,
   submitVerificationRequest,
-} from '@/lib/dal/verification';
-import { Enum } from '@/lib/enums';
-import { ImageService } from '@/lib/image-utils-server';
-import { requireUser } from '@/lib/require-user';
+} from '@/data/user/verification.dal';
+import type { VerificationMethod } from '@/generated/prisma';
+import { VerificationFileRole } from '@/generated/prisma';
+import { auditServerAction } from '@/lib/audit/audit';
+import { requireUser } from '@/lib/auth/server';
+import { ImageService } from '@/lib/image_system/image-utils-server';
 
 export type UploadVerificationFileResult =
   | { ok: true; data: { fileId: number; storageKey: string } }
@@ -40,8 +40,7 @@ export async function uploadVerificationFileAction(
         return { ok: false, error: 'No valid file provided' };
       }
 
-      const role =
-        (formData.get('role') as VerificationFileRole) || Enum.VerificationFileRole.DOCUMENT;
+      const role = (formData.get('role') as VerificationFileRole) || VerificationFileRole.DOCUMENT;
 
       // Step 3: Upload using unified image service with 'verification' type
       const uploadResult = await ImageService.uploadImage(file, user.id, 'verification');
@@ -133,7 +132,7 @@ export async function submitVerificationRequestAction(data: {
       userNote: data.userNote,
       files: data.files.map((file) => ({
         storageKey: file.storageKey,
-        role: file.role || Enum.VerificationFileRole.DOCUMENT,
+        role: file.role || VerificationFileRole.DOCUMENT,
       })),
     });
 

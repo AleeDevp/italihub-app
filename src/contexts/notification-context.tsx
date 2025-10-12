@@ -1,7 +1,7 @@
 'use client';
 
 import { showNotificationToast } from '@/components/notifications/notification-toast';
-import { useSession } from '@/lib/auth-client';
+import { useSession } from '@/lib/auth/client';
 import {
   createContext,
   useCallback,
@@ -200,14 +200,18 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       if (ids.length === 0) return;
       // optimistic
       dispatch({ type: 'MARK_AS_READ', ids });
-      const res = await fetch('/api/notifications/mark-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids }),
-      });
-      if (!res.ok) {
+      try {
+        const res = await fetch('/api/notifications/mark-read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids }),
+          // Ensure the request is sent even if navigation occurs immediately after
+          keepalive: true,
+        } as RequestInit);
+        if (!res.ok) throw new Error('bad status');
+      } catch {
         toast.error('Failed to sync read state');
-        // Optional: refetch
+        // Optional: refetch to reconcile state
         loadInitial();
       }
     },

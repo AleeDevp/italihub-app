@@ -1,5 +1,5 @@
 import type { NotificationSeverity, NotificationType } from '@/generated/prisma';
-import { logSuccess } from '@/lib/audit';
+import { logSuccess } from '@/lib/audit/audit';
 import { prisma } from '@/lib/db';
 import { notificationBroker } from '@/lib/sse/notification-broker';
 

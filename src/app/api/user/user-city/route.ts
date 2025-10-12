@@ -1,5 +1,5 @@
+import { requireUser } from '@/lib/auth/server';
 import { prisma } from '@/lib/db';
-import { requireUser } from '@/lib/require-user';
 import { NextResponse } from 'next/server';
 
 export async function GET() {

@@ -1,12 +1,10 @@
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { resolveImageUrl } from '@/lib/image-utils-client';
+import { resolveImageUrl } from '@/lib/image_system/image-utils-client';
 import { cn } from '@/lib/utils';
 import { UserIcon } from 'lucide-react';
-import { BiSolidBadge } from 'react-icons/bi';
 import { BsCheck } from 'react-icons/bs';
-
 type UserAvatarProps = {
   image?: string | null;
   alt?: string;
@@ -24,33 +22,24 @@ export function UserAvatar({
 }: UserAvatarProps) {
   const url = resolveImageUrl(image, { width: size, crop: 'fill', gravity: 'face' });
 
-  // simple size mapping for the badge based on the provided width hint
-  const iconSizeClass = size / 5.5;
-  const checkSize = Math.round(iconSizeClass * 0.7);
-
   return (
-    <span className={cn('relative')}>
-      <Avatar className={cn('h-10 w-10 ', className)}>
+    <div className="relative">
+      <Avatar className={cn(className)}>
         {url ? <AvatarImage src={url} alt={alt} /> : null}
         <AvatarFallback className="text-muted-foreground">
           <UserIcon className="size-5" />
         </AvatarFallback>
       </Avatar>
       {isVerified ? (
-        <span aria-label="Verified account" className={cn('absolute -right-1 -bottom-1')}>
-          <span className="relative inline-block">
-            <BiSolidBadge
-              size={iconSizeClass}
-              className="text-green-600"
-              stroke="#b9f8cf"
-              strokeWidth={2}
-            />
-            <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <BsCheck size={checkSize} className="text-green-200" />
-            </span>
-          </span>
+        <span
+          aria-label="Verified account"
+          className={
+            'w-1/3 h-1/3 absolute bg-white rounded-full flex items-center justify-center shrink-0 right-0 bottom-0 shadow-sm'
+          }
+        >
+          <BsCheck className="text-green-600 w-5/6 h-5/6" />
         </span>
       ) : null}
-    </span>
+    </div>
   );
 }

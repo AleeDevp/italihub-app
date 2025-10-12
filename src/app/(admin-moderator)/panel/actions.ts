@@ -1,6 +1,6 @@
 'use server';
 
-import { requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth/server';
 import { forbidden, unauthorized } from 'next/navigation';
 import { setTimeout } from 'node:timers/promises';
 // Example admin action

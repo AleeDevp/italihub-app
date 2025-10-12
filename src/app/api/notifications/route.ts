@@ -1,5 +1,5 @@
 import type { NotificationType } from '@/generated/prisma';
-import { requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth/server';
 import { prisma } from '@/lib/db';
 import { NextRequest } from 'next/server';
 

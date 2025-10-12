@@ -12,7 +12,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/lib/auth/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -43,7 +43,7 @@ export function ForgotPasswordForm() {
     });
 
     if (error) {
-      setError(error.message || 'Something went wrong');
+      setError(error.message || 'Failed to send reset email');
     } else {
       setSuccess("If an account exists for this email, you'll receive a password reset link.");
     }
@@ -52,10 +52,10 @@ export function ForgotPasswordForm() {
   const loading = form.formState.isSubmitting;
 
   return (
-    <Card className="mx-auto ">
+    <Card className="mx-auto w-full max-w-md">
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" aria-busy={loading}>
             <FormField
               control={form.control}
               name="email"
@@ -91,7 +91,14 @@ export function ForgotPasswordForm() {
               </Alert>
             )}
 
-            <LoadingButton type="submit" className="w-full" loading={loading} disabled={!!success}>
+            <LoadingButton
+              type="submit"
+              className="w-full"
+              loading={loading}
+              disabled={!!success}
+              aria-disabled={!!success || loading}
+              aria-busy={loading}
+            >
               Send reset link
             </LoadingButton>
           </form>
