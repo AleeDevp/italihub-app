@@ -150,6 +150,102 @@
 			"command": "npm run -s typecheck",
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "Typecheck - Next.js project",
+			"type": "shell",
+			"command": "npm run -s typecheck",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Typecheck - Next.js project",
+			"type": "shell",
+			"command": "npm run -s typecheck",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Typecheck - Next.js project",
+			"type": "shell",
+			"command": "npm run -s typecheck",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Lint - repo",
+			"type": "shell",
+			"command": "npm run -s lint",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Typecheck - Next.js project",
+			"type": "shell",
+			"command": "npm run -s typecheck",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Typecheck - Next.js project",
+			"type": "shell",
+			"command": "npm run -s typecheck",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Typecheck - Next.js project",
+			"type": "shell",
+			"command": "npm run -s typecheck",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Typecheck - Next.js project",
+			"type": "shell",
+			"command": "npm run -s typecheck",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Typecheck - Next.js project",
+			"type": "shell",
+			"command": "npm run -s typecheck",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Typecheck - Next.js project",
+			"type": "shell",
+			"command": "npm run -s typecheck",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Typecheck - Next.js project",
+			"type": "shell",
+			"command": "npm run -s typecheck",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Typecheck - Next.js project",
+			"type": "shell",
+			"command": "npm run -s typecheck",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

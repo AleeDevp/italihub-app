@@ -1,30 +1,42 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { LuHandPlatter } from 'react-icons/lu';
+import { useConfirmBeforeClose } from '@/hooks/use-confirm-before-close';
 
-export function ServicesForm() {
+export function ServicesCreateDialog() {
+  const { open, onOpenChange, markDirty, handleCancel, confirmDialog } = useConfirmBeforeClose();
+
   return (
-    <Card className="w-full ad-services-bg">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl ad-services shadow-lg">
-            <LuHandPlatter className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl">Services Advertisement</CardTitle>
-            <CardDescription className="text-base">
-              Offer your professional services to the community
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="shadow-sm rounded-3xl py-6 space-y-6 mx-2 bg-card">
-        <div className="space-y-4">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button size="lg" className="ad-services hover:shadow-lg transition-all">
+          Start creating services ad
+        </Button>
+      </DialogTrigger>
+      <DialogContent
+        className="sm:max-w-2xl"
+        disableOutsideClose
+        disableEscapeClose
+        showCloseButton={false}
+      >
+        <DialogHeader>
+          <DialogTitle>Create services ad</DialogTitle>
+          <DialogDescription>Fill out the details below to publish your listing.</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4" onChange={markDirty}>
           <div className="space-y-2">
             <Label htmlFor="services-title">Service Title *</Label>
             <Input id="services-title" placeholder="e.g., Professional Web Development Services" />
@@ -58,15 +70,16 @@ export function ServicesForm() {
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4">
-          <Button variant="outline" size="lg">
-            Save Draft
+        <DialogFooter>
+          <Button variant="outline" size="lg" onClick={handleCancel}>
+            Cancel
           </Button>
           <Button size="lg" className="ad-services hover:shadow-lg transition-all">
             Publish Ad
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </DialogFooter>
+      </DialogContent>
+      {confirmDialog}
+    </Dialog>
   );
 }

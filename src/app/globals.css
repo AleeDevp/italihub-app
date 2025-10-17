@@ -23,8 +23,8 @@
   --destructive: oklch(0.5831 0.1911 6.341);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(94.309% 0.00011 271.152);
-  --input: oklch(87.388% 0.08255 346.967);
-  --ring: oklch(0.6002 0.2414 0.1348);
+  --input: oklch(89.755% 0.0001 271.152);
+  --ring: oklch(86.995% 0.0001 271.152);
   --chart-1: oklch(0.6002 0.2414 0.1348);
   --chart-2: oklch(0.5979 0.175 345.0378);
   --chart-3: oklch(0.6009 0.1243 311.7958);
@@ -257,4 +257,12 @@ body {
 .ad-services {
   @apply bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500;
   /* dark:from-purple-950/20 dark:via-pink-950/20 dark:to-rose-950/20 */
+}
+
+.form-content-card {
+  @apply rounded-3xl border p-4 bg-white shadow-xs;
+}
+
+.form-content-card-disabled {
+  @apply bg-transparent border-dashed border-2 rounded-3xl p-4 border-neutral-200;
 }

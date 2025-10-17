@@ -1,30 +1,42 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { BiSolidPlaneAlt } from 'react-icons/bi';
+import { useConfirmBeforeClose } from '@/hooks/use-confirm-before-close';
 
-export function TransportationForm() {
+export function TransportationCreateDialog() {
+  const { open, onOpenChange, markDirty, handleCancel, confirmDialog } = useConfirmBeforeClose();
+
   return (
-    <Card className="w-full ad-transportation-bg">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl ad-transportation shadow-lg">
-            <BiSolidPlaneAlt className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl">Transportation Advertisement</CardTitle>
-            <CardDescription className="text-base">
-              List your vehicle for sale or service
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="shadow-sm rounded-3xl py-6 space-y-6 mx-2 bg-card">
-        <div className="space-y-4">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button size="lg" className="ad-transportation hover:shadow-lg transition-all">
+          Start creating transportation ad
+        </Button>
+      </DialogTrigger>
+      <DialogContent
+        className="sm:max-w-2xl"
+        disableOutsideClose
+        disableEscapeClose
+        showCloseButton={false}
+      >
+        <DialogHeader>
+          <DialogTitle>Create transportation ad</DialogTitle>
+          <DialogDescription>Fill out the details below to publish your listing.</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4" onChange={markDirty}>
           <div className="space-y-2">
             <Label htmlFor="transport-title">Vehicle Title *</Label>
             <Input id="transport-title" placeholder="e.g., 2020 Toyota Corolla - Like New" />
@@ -58,15 +70,16 @@ export function TransportationForm() {
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4">
-          <Button variant="outline" size="lg">
-            Save Draft
+        <DialogFooter>
+          <Button variant="outline" size="lg" onClick={handleCancel}>
+            Cancel
           </Button>
           <Button size="lg" className="ad-transportation hover:shadow-lg transition-all">
             Publish Ad
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </DialogFooter>
+      </DialogContent>
+      {confirmDialog}
+    </Dialog>
   );
 }

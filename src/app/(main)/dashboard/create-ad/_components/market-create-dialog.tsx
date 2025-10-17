@@ -1,30 +1,42 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { HiShoppingBag } from 'react-icons/hi2';
+import { useConfirmBeforeClose } from '@/hooks/use-confirm-before-close';
 
-export function MarketForm() {
+export function MarketCreateDialog() {
+  const { open, onOpenChange, markDirty, handleCancel, confirmDialog } = useConfirmBeforeClose();
+
   return (
-    <Card className="w-full  ad-marketplace-bg">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl ad-marketplace shadow-lg">
-            <HiShoppingBag className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl">Market Advertisement</CardTitle>
-            <CardDescription className="text-base">
-              Sell your items or products on the marketplace
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="shadow-sm rounded-3xl py-6 space-y-6 mx-2 bg-card">
-        <div className="space-y-4">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button size="lg" className="ad-marketplace hover:shadow-lg transition-all">
+          Start creating market ad
+        </Button>
+      </DialogTrigger>
+      <DialogContent
+        className="sm:max-w-2xl"
+        disableOutsideClose
+        disableEscapeClose
+        showCloseButton={false}
+      >
+        <DialogHeader>
+          <DialogTitle>Create market ad</DialogTitle>
+          <DialogDescription>Fill out the details below to publish your listing.</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4" onChange={markDirty}>
           <div className="space-y-2">
             <Label htmlFor="market-title">Product Title *</Label>
             <Input id="market-title" placeholder="e.g., iPhone 14 Pro - Excellent Condition" />
@@ -58,15 +70,16 @@ export function MarketForm() {
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4">
-          <Button variant="outline" size="lg">
-            Save Draft
+        <DialogFooter>
+          <Button variant="outline" size="lg" onClick={handleCancel}>
+            Cancel
           </Button>
           <Button size="lg" className="ad-marketplace hover:shadow-lg transition-all">
             Publish Ad
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </DialogFooter>
+      </DialogContent>
+      {confirmDialog}
+    </Dialog>
   );
 }

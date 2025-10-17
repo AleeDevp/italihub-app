@@ -5,10 +5,10 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useState } from 'react';
-import { HousingForm } from './housing-form';
-import { MarketForm } from './market-form';
-import { ServicesForm } from './services-form';
-import { TransportationForm } from './transportation-form';
+import { HousingCreateCard } from './housing-create-card';
+import { MarketCreateCard } from './market-create-card';
+import { ServicesCreateCard } from './services-create-card';
+import { TransportationCreateCard } from './transportation-create-card';
 
 export type AdCategory = 'housing' | 'transportation' | 'market' | 'services';
 
@@ -41,13 +41,13 @@ export function CreateAdContent() {
   const renderForm = () => {
     switch (selectedCategory) {
       case 'housing':
-        return <HousingForm />;
+        return <HousingCreateCard />;
       case 'transportation':
-        return <TransportationForm />;
+        return <TransportationCreateCard />;
       case 'market':
-        return <MarketForm />;
+        return <MarketCreateCard />;
       case 'services':
-        return <ServicesForm />;
+        return <ServicesCreateCard />;
     }
   };
 
@@ -123,7 +123,7 @@ export function CreateAdContent() {
       <Separator />
 
       {/* Form Content with Simple Fade Animation */}
-      <div className="relative min-h-[600px]">
+      <div>
         <AnimatePresence mode="wait">
           <motion.div
             key={selectedCategory}
