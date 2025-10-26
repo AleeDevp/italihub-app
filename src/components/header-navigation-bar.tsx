@@ -32,7 +32,8 @@ export function HeaderNavigationBar() {
       <div className="rounded-full py-0.5">
         <ul className="flex items-center gap-1.5">
           {items.map(({ key, href, label, Icon, active }) => {
-            const protectedKey = key === 'post-ad' || key === 'ads' || key === 'dashboard';
+            const protectedKey =
+              key === 'create-ad' || key === 'ads-management' || key === 'dashboard';
             const content = (
               <span
                 aria-current={active ? 'page' : undefined}

@@ -5,6 +5,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DateRange } from 'react-day-picker';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 
+import { CityMapWrapper } from '@/components/city-map-wrapper';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -31,19 +33,21 @@ import { SelectableList } from '@/components/ui/selectable-list';
 import { Separator } from '@/components/ui/separator';
 import { Counter } from '@/components/ui/shadcn-io/counter';
 import { Textarea } from '@/components/ui/textarea';
+import { useCityById } from '@/contexts/cities-context';
 import {
   AdCategory,
   BillsPolicy,
   GenderPreference,
   HeatingType,
-  HouseholdGender,
   HousingContractType,
   HousingPriceType,
+  HousingPropertyType,
   HousingRentalKind,
   HousingUnitType,
 } from '@/generated/prisma';
 import { useConfirmBeforeClose } from '@/hooks/use-confirm-before-close';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSession } from '@/lib/auth/client';
 import {
   housingSchema,
   pruneHousingValuesForBranch,
@@ -100,6 +104,11 @@ export function HousingCreateDialog() {
   });
   const [currentStep, setCurrentStep] = useState<number>(1);
   const isMobile = useIsMobile();
+
+  // Get user session and city information for location step
+  const session = useSession();
+  const userCityId = session.data?.user?.cityId;
+  const userCity = useCityById(userCityId);
 
   const form = useForm<HousingFormValues>({
     // Using manual validation due to complex schema transformations
@@ -163,10 +172,8 @@ export function HousingCreateDialog() {
           rentalKind: cleaned.rentalKind,
           unitType: cleaned.unitType,
           propertyType: cleaned.propertyType ?? null,
-          roomType:
-            cleaned.unitType === HousingUnitType.ROOM || cleaned.unitType === HousingUnitType.BED
-              ? (cleaned.roomType ?? null)
-              : null,
+          // roomType removed; unitType now encodes room sizing
+          roomType: null,
           availabilityStartDate: cleaned.availabilityStartDate!,
           availabilityEndDate: cleaned.availabilityEndDate ?? null,
           contractType: cleaned.contractType,
@@ -228,10 +235,11 @@ export function HousingCreateDialog() {
   // Helpers
   const rentalKind = useWatch({ control, name: 'rentalKind' });
   const unitType = useWatch({ control, name: 'unitType' });
+  const propertyType = useWatch({ control, name: 'propertyType' });
   // Keep the parent lightweight; step gating updates via useStepValidity hook below
   const availabilityStartDate = form.watch('availabilityStartDate');
   const availabilityEndDate = form.watch('availabilityEndDate');
-  const isRoomy = unitType === HousingUnitType.ROOM || unitType === HousingUnitType.BED;
+
   const billsPolicy = form.watch('billsPolicy');
   const priceNegotiable = !!form.watch('priceNegotiable');
   const hasAgencyFee = !!form.watch('hasAgencyFee');
@@ -304,12 +312,7 @@ export function HousingCreateDialog() {
       }
     }
 
-    // unitType toggles roomType
-    if (unitType === HousingUnitType.WHOLE_APARTMENT) {
-      if (form.getValues('roomType') != null) {
-        form.setValue('roomType', null, { shouldDirty: true, shouldValidate: true });
-      }
-    }
+    // unitType toggles: no separate roomType field exists anymore
 
     // priceNegotiable toggles priceAmount
     if (priceNegotiable) {
@@ -336,6 +339,22 @@ export function HousingCreateDialog() {
     }
   }, [rentalKind, unitType, priceNegotiable, hasAgencyFee, billsPolicy, form]);
 
+  // New rule: if propertyType is STUDIO, force unitType to WHOLE_APARTMENT
+  useEffect(() => {
+    try {
+      if (propertyType === HousingPropertyType.STUDIO) {
+        if (form.getValues('unitType') !== HousingUnitType.WHOLE_APARTMENT) {
+          form.setValue('unitType', HousingUnitType.WHOLE_APARTMENT, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+      }
+    } catch (e) {
+      // swallow - defensive
+    }
+  }, [propertyType, form]);
+
   // Step definitions
   const stepDefs = useMemo(
     () => [
@@ -355,11 +374,6 @@ export function HousingCreateDialog() {
   // Watch fields relevant to current step for validation
   const stepFields = STEP_FIELDS[currentStep] || [];
   useWatch({ control, name: stepFields as any });
-
-  // Validate current step
-  const currentStepIsValid = useMemo(() => {
-    return validateStep(currentStep, form.getValues());
-  }, [currentStep, form.watch()]);
 
   // Check if user can navigate to a target step
   const canNavigateTo = useCallback(
@@ -489,6 +503,10 @@ export function HousingCreateDialog() {
     goTo(currentStep + 1);
   };
 
+  // Track whether the map is currently performing an async neighborhood lookup
+  // (reverse geocoding) so we can disable navigation while it settles.
+  const [mapChangePending, setMapChangePending] = useState(false);
+
   // Helper to get step schema
   const getStepSchema = (step: number) => {
     switch (step) {
@@ -614,7 +632,7 @@ export function HousingCreateDialog() {
             {/* Scrollable step content container (animation-free) */}
             <div
               ref={contentScrollRef}
-              className="bg-neutral-50 min-h-[320px] h-full overflow-y-auto py-4 p-2 rounded-3xl inset-shadow-sm border"
+              className="bg-neutral-50 min-h-[320px] h-full overflow-y-auto py-4 p-2 rounded-4xl inset-shadow-sm border"
             >
               {/* Rental & Unit */}
               {currentStep === 1 && (
@@ -623,97 +641,96 @@ export function HousingCreateDialog() {
 
               {/* Availability & Contract */}
               {currentStep === 2 && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {/* Row 2: Contract + Residenza */}
-                  <div className="grid grid-col-1 items-center gap-4">
-                    <FormField
-                      control={control}
-                      name="contractType"
-                      render={({ field, fieldState }) => (
-                        <FormItem className="flex flex-col form-content-card">
-                          <div className="flex justify-between items-center">
-                            <FormLabel>Contract</FormLabel>
-                            <SelectableList
-                              className="mt-2"
-                              ariaLabel="Contract type"
-                              value={field.value}
-                              onChange={(v) => {
-                                field.onChange(v);
-                                revalidateField('contractType');
-                              }}
-                              options={[
-                                { value: HousingContractType.LONG_TERM, label: 'Long term' },
-                                { value: HousingContractType.SHORT_TERM, label: 'Short term' },
-                                {
-                                  value: HousingContractType.NONE,
-                                  label: (
-                                    <span>
-                                      <X size={20} className="text-destructive" />
-                                      <span className="sr-only">No</span>
-                                    </span>
-                                  ),
-                                },
-                              ]}
-                              orientation="horizontal"
-                              showIndicator={false}
-                              disabled={rentalKind !== HousingRentalKind.PERMANENT}
-                              error={!!fieldState.error}
-                            />
-                          </div>
+                  {rentalKind === HousingRentalKind.PERMANENT && (
+                    <div className="grid grid-col-1 items-center space-y-2">
+                      <FormField
+                        control={control}
+                        name="contractType"
+                        render={({ field, fieldState }) => (
+                          <FormItem className="flex flex-col form-content-card">
+                            <div className="flex justify-between items-center">
+                              <FormLabel>Contract</FormLabel>
+                              <SelectableList
+                                ariaLabel="Contract type"
+                                value={field.value}
+                                onChange={(v) => {
+                                  field.onChange(v);
+                                  revalidateField('contractType');
+                                }}
+                                options={[
+                                  { value: HousingContractType.LONG_TERM, label: 'Long term' },
+                                  { value: HousingContractType.SHORT_TERM, label: 'Short term' },
+                                  {
+                                    value: HousingContractType.NONE,
+                                    label: (
+                                      <span>
+                                        <X size={20} className="text-destructive" />
+                                        <span className="sr-only">No</span>
+                                      </span>
+                                    ),
+                                  },
+                                ]}
+                                orientation="horizontal"
+                                showIndicator={false}
+                                error={!!fieldState.error}
+                              />
+                            </div>
 
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={control}
-                      name="residenzaAvailable"
-                      render={({ field, fieldState }) => (
-                        <FormItem className="form-content-card">
-                          <div className="flex items-center justify-between">
-                            <FormLabel>Residenza available</FormLabel>
-                            <SelectableList
-                              className="w-[150px]"
-                              itemClassName="justify-center"
-                              ariaLabel="Residenza availability"
-                              value={field.value ?? null}
-                              onChange={(v) => {
-                                field.onChange(v);
-                                revalidateField('residenzaAvailable');
-                              }}
-                              showIndicator={false}
-                              options={[
-                                {
-                                  value: true,
-                                  label: (
-                                    <span>
-                                      <Check size={20} className="text-emerald-600" />
-                                      <span className="sr-only">Yes</span>
-                                    </span>
-                                  ),
-                                },
-                                {
-                                  value: false,
-                                  label: (
-                                    <span>
-                                      <X size={20} className="text-destructive" />
-                                      <span className="sr-only">No</span>
-                                    </span>
-                                  ),
-                                },
-                              ]}
-                              orientation="horizontal"
-                              disabled={rentalKind !== HousingRentalKind.PERMANENT}
-                              error={!!fieldState.error}
-                            />
-                          </div>
+                      <FormField
+                        control={control}
+                        name="residenzaAvailable"
+                        render={({ field, fieldState }) => (
+                          <FormItem className="form-content-card">
+                            <div className="flex items-center justify-between">
+                              <FormLabel>Residenza available</FormLabel>
+                              <SelectableList
+                                className="w-[150px]"
+                                itemClassName="justify-center"
+                                ariaLabel="Residenza availability"
+                                value={field.value ?? null}
+                                onChange={(v) => {
+                                  field.onChange(v);
+                                  revalidateField('residenzaAvailable');
+                                }}
+                                showIndicator={false}
+                                options={[
+                                  {
+                                    value: true,
+                                    label: (
+                                      <span>
+                                        <Check size={20} className="text-emerald-600" />
+                                        <span className="sr-only">Yes</span>
+                                      </span>
+                                    ),
+                                  },
+                                  {
+                                    value: false,
+                                    label: (
+                                      <span>
+                                        <X size={20} className="text-destructive" />
+                                        <span className="sr-only">No</span>
+                                      </span>
+                                    ),
+                                  },
+                                ]}
+                                orientation="horizontal"
+                                error={!!fieldState.error}
+                              />
+                            </div>
 
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
 
                   {/* Row 3: Availability calendar (single or range) */}
                   <div>
@@ -724,9 +741,6 @@ export function HousingCreateDialog() {
                         const isTemporary = rentalKind === HousingRentalKind.TEMPORARY;
                         const fromDate = availabilityStartDate as Date | null | undefined;
                         const toDate = availabilityEndDate as Date | null | undefined;
-                        const selected = isTemporary
-                          ? { from: fromDate ?? undefined, to: toDate ?? undefined }
-                          : (fromDate ?? undefined);
 
                         // Calendar config (simple computation)
                         const today0 = startOfDay(new Date());
@@ -741,144 +755,146 @@ export function HousingCreateDialog() {
                         const defaultMonth = fromDate ?? minDate;
 
                         return (
-                          <FormItem className="form-content-card">
-                            <div className="flex flex-col">
-                              <span className="space-y-1">
-                                <FormLabel>Availability</FormLabel>
-                                {/* Mode guidance text */}
-                                <p className="text-xs text-muted-foreground">
-                                  {isTemporary
-                                    ? 'Select the Start date and End date.'
-                                    : 'Select the Start date.'}
-                                </p>
-                              </span>
+                          <FormItem className="form-content-card space-y-2">
+                            <div className="space-y-1">
+                              <FormLabel className="">Availability</FormLabel>
+                              {/* Mode guidance text */}
+                              <p className="text-xs text-muted-foreground">
+                                {isTemporary
+                                  ? 'Select the Start date and End date.'
+                                  : 'Select the Start date.'}
+                              </p>
                             </div>
-                            <div className="w-full max-w-[320px] space-y-2 mx-auto">
-                              {/* Guidance bar */}
-                              <div className="rounded-2xl flex divide-x border">
-                                {/* Start side */}
-                                <div className="flex-1 flex flex-col justify-center items-center">
-                                  <div
-                                    className={cn(
-                                      'rounded-tl-2xl border-b flex-1/3 py-1 bg-white w-full text-xs text-center'
-                                    )}
-                                  >
-                                    {!availabilityStartDate ? (
-                                      <span className="text-primary font-semibold">Start date</span>
-                                    ) : (
-                                      <span className="">Start date</span>
-                                    )}
-                                  </div>
-                                  <div className="flex-2/3 tracking-widest py-1 text-sm">
-                                    {!availabilityStartDate ? (
-                                      <span className="tracking-tight font-sans font-light">
-                                        select a date
-                                      </span>
-                                    ) : (
-                                      <span className="flex items-baseline gap-2">
+                            <div className="w-full mx-auto flex flex-col md:flex-row md:justify-between max-w-[320px] md:max-w-none gap-2 md:gap-6">
+                              {/* Label+ guidance bar (in small screen shows above calendar) */}
+                              <div className="w-full md:mt-5 mx-auto space-y-4">
+                                <div className="rounded-4xl  border py-2 px-6">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 rounded-full shadow-sm bg-emerald-50 text-emerald-600 flex items-center justify-center">
                                         <CalendarDays size={14} />
-                                        {formatDDMMYY(fromDate)}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                {/* End side */}
-                                <div className="flex-1 flex flex-col justify-center items-center">
-                                  <div className="rounded-tr-2xl border-b flex-1/3 py-1 bg-white w-full text-xs text-center">
-                                    {isTemporary ? (
-                                      !availabilityEndDate && availabilityStartDate ? (
-                                        <span className="text-primary font-semibold">End date</span>
-                                      ) : (
-                                        <span className="">End date</span>
-                                      )
-                                    ) : (
-                                      <span className="text-muted">End date</span>
-                                    )}
-                                  </div>
-                                  <div className="flex-2/3 tracking-widest text-sm py-1">
-                                    {isTemporary ? (
-                                      !availabilityEndDate ? (
-                                        availabilityStartDate ? (
-                                          <span className="tracking-tight font-sans font-light">
-                                            select a date
-                                          </span>
+                                      </div>
+                                      <div className="text-sm">
+                                        <h2 className="text-xs text-neutral-500">Start</h2>
+                                        {!availabilityStartDate ? (
+                                          <div className="text-emerald-600">select start date</div>
                                         ) : (
-                                          <span className="text-neutral-400">-</span>
-                                        )
-                                      ) : (
-                                        <span className="flex items-baseline gap-2">
-                                          <CalendarDays size={14} />
-                                          {formatDDMMYY(toDate)}
-                                        </span>
-                                      )
-                                    ) : (
-                                      <span className="text-muted">Not required</span>
-                                    )}
+                                          <div className="tracking-widest ">
+                                            {formatDDMMYY(fromDate)}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex w-full gap-4 items-center">
+                                    <div className="w-full">
+                                      <Separator className="" />
+                                    </div>
+                                    <div className=" text-xs text-neutral-400">
+                                      {isTemporary ? 'Range' : 'Single'}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div
+                                        className={cn(
+                                          'w-8 h-8 rounded-full flex items-center justify-center',
+                                          isTemporary
+                                            ? 'bg-red-50 text-red-500 shadow-sm'
+                                            : 'bg-neutral-100 text-neutral-300 '
+                                        )}
+                                      >
+                                        <CalendarDays size={14} />
+                                      </div>
+                                      <div className="text-sm">
+                                        <h2 className="text-xs text-neutral-500">End</h2>
+                                        {isTemporary ? (
+                                          !availabilityEndDate ? (
+                                            availabilityStartDate ? (
+                                              <div className=" text-red-500">select end date</div>
+                                            ) : (
+                                              '-'
+                                            )
+                                          ) : (
+                                            <div className="tracking-widest">
+                                              {formatDDMMYY(toDate)}
+                                            </div>
+                                          )
+                                        ) : (
+                                          <span className="text-sm text-neutral-300">
+                                            Not required
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                              {isTemporary ? (
-                                <Calendar
-                                  className={cn('w-full bg-card shadow-2xs rounded-2xl')}
-                                  mode="range"
-                                  selected={
-                                    {
-                                      from: fromDate ?? undefined,
-                                      to: toDate ?? undefined,
-                                    } as DateRange | undefined
-                                  }
-                                  defaultMonth={defaultMonth}
-                                  fromDate={minDate}
-                                  toDate={maxDate}
-                                  onSelect={(range?: DateRange) => {
-                                    const from = range?.from ?? null;
-                                    const endCandidate = range?.to ?? null;
-                                    const to =
-                                      from && endCandidate && isSameDay(endCandidate, from)
-                                        ? null
-                                        : endCandidate;
-                                    if (from) {
-                                      form.setValue('availabilityStartDate', from, {
+                              <div className="md:-mt-12 md:w-full md:max-w-[320px]">
+                                {isTemporary ? (
+                                  <Calendar
+                                    className="w-full border bg-card rounded-4xl shadow-sm"
+                                    mode="range"
+                                    selected={
+                                      {
+                                        from: fromDate ?? undefined,
+                                        to: toDate ?? undefined,
+                                      } as DateRange | undefined
+                                    }
+                                    defaultMonth={defaultMonth}
+                                    fromDate={minDate}
+                                    toDate={maxDate}
+                                    onSelect={(range?: DateRange) => {
+                                      const from = range?.from ?? null;
+                                      const endCandidate = range?.to ?? null;
+                                      const to =
+                                        from && endCandidate && isSameDay(endCandidate, from)
+                                          ? null
+                                          : endCandidate;
+                                      if (from) {
+                                        form.setValue('availabilityStartDate', from, {
+                                          shouldDirty: true,
+                                          shouldValidate: true,
+                                        });
+                                      }
+                                      form.setValue('availabilityEndDate', to, {
                                         shouldDirty: true,
                                         shouldValidate: true,
                                       });
-                                    }
-                                    form.setValue('availabilityEndDate', to, {
-                                      shouldDirty: true,
-                                      shouldValidate: true,
-                                    });
-                                  }}
-                                  required
-                                  disabled={(date) => {
-                                    const day = startOfDay(date);
-                                    return day < minDate || day > maxDate;
-                                  }}
-                                />
-                              ) : (
-                                <Calendar
-                                  className={cn('w-full bg-card shadow-2xs rounded-2xl')}
-                                  mode="single"
-                                  selected={fromDate ?? undefined}
-                                  defaultMonth={defaultMonth}
-                                  fromDate={minDate}
-                                  toDate={maxDate}
-                                  onSelect={(d?: Date) => {
-                                    if (!d) return;
-                                    form.setValue('availabilityStartDate', d, {
-                                      shouldDirty: true,
-                                      shouldValidate: true,
-                                    });
-                                    form.setValue('availabilityEndDate', null, {
-                                      shouldDirty: true,
-                                      shouldValidate: true,
-                                    });
-                                  }}
-                                  disabled={(date) => {
-                                    const day = startOfDay(date);
-                                    return day < minDate || day > maxDate;
-                                  }}
-                                />
-                              )}
+                                    }}
+                                    required
+                                    disabled={(date) => {
+                                      const day = startOfDay(date);
+                                      return day < minDate || day > maxDate;
+                                    }}
+                                  />
+                                ) : (
+                                  <Calendar
+                                    className="w-full border bg-card rounded-4xl shadow-sm"
+                                    mode="single"
+                                    selected={fromDate ?? undefined}
+                                    defaultMonth={defaultMonth}
+                                    fromDate={minDate}
+                                    toDate={maxDate}
+                                    onSelect={(d?: Date) => {
+                                      if (!d) return;
+                                      form.setValue('availabilityStartDate', d, {
+                                        shouldDirty: true,
+                                        shouldValidate: true,
+                                      });
+                                      form.setValue('availabilityEndDate', null, {
+                                        shouldDirty: true,
+                                        shouldValidate: true,
+                                      });
+                                    }}
+                                    disabled={(date) => {
+                                      const day = startOfDay(date);
+                                      return day < minDate || day > maxDate;
+                                    }}
+                                  />
+                                )}
+                              </div>
                             </div>
                           </FormItem>
                         );
@@ -890,7 +906,7 @@ export function HousingCreateDialog() {
 
               {/* Pricing */}
               {currentStep === 3 && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {/* Row 1: Price and Deposit */}
                   <div className="flex flex-col form-content-card">
                     <FormField
@@ -898,23 +914,17 @@ export function HousingCreateDialog() {
                       name="priceAmount"
                       render={({ field, fieldState }) => (
                         <FormItem className="">
-                          <div className="flex justify-between items-baseline">
-                            <FormLabel className="flex-1">Price</FormLabel>
+                          <div className="flex items-baseline gap-2">
+                            <FormLabel>Price</FormLabel>
+                            <Badge>{form.getValues('priceType').toLowerCase()}</Badge>
                           </div>
                           <FormControl>
                             <div className="relative">
-                              <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-sm space-x-2">
-                                <span className="bg-emerald-500 text-white py-1 px-2 rounded-[9px] ">
-                                  {form.getValues('priceType')}
-                                </span>
-                                <span className="">€</span>
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">
+                                €
                               </span>
                               <Input
-                                className={cn(
-                                  form.getValues('priceType') === HousingPriceType.DAILY
-                                    ? 'pl-20'
-                                    : 'pl-28'
-                                )}
+                                className="pl-8"
                                 type="number"
                                 inputMode="decimal"
                                 disabled={priceNegotiable}
@@ -935,7 +945,7 @@ export function HousingCreateDialog() {
                             control={control}
                             name="priceNegotiable"
                             render={({ field }) => (
-                              <FormItem className="flex flex-row items-center gap-2 mt-2">
+                              <FormItem className="flex flex-row items-center justify-end gap-2 mt-2">
                                 <FormControl>
                                   <Checkbox
                                     checked={!!field.value}
@@ -959,527 +969,384 @@ export function HousingCreateDialog() {
                         </FormItem>
                       )}
                     />
-                    <Separator className="my-5" />
-
-                    <FormField
-                      control={control}
-                      name="depositAmount"
-                      render={({ field, fieldState }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel className={cn({ 'text-muted': isTemporary })}>
-                            Deposit
-                            {!isTemporary && (
-                              <span className="text-xs text-neutral-400 font-light">
-                                {' '}
-                                ( Optional )
-                              </span>
-                            )}
-                            {isTemporary && (
-                              <span className="text-xs text-neutral-400 font-light">
-                                {' '}
-                                ( Not applicable for temporary )
-                              </span>
-                            )}
-                          </FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">
-                                €
-                              </span>
-                              <Input
-                                className="pl-8"
-                                type="number"
-                                inputMode="decimal"
-                                disabled={isTemporary}
-                                {...field}
-                                value={field.value ?? ''}
-                                onChange={(e) => {
-                                  field.onChange(
-                                    e.target.value === '' ? null : Number(e.target.value)
-                                  );
-                                  revalidateField('depositAmount');
-                                }}
-                                placeholder={isTemporary ? 'N/A' : 'Enter amount'}
-                                aria-invalid={!!fieldState.error}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {!isTemporary && <Separator className="my-5" />}
+                    {!isTemporary && (
+                      <FormField
+                        control={control}
+                        name="depositAmount"
+                        render={({ field, fieldState }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel className={cn({ 'text-muted': isTemporary })}>
+                              Deposit
+                              <span className="text-xs font-light text-neutral-400">Optional</span>
+                            </FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">
+                                  €
+                                </span>
+                                <Input
+                                  className="pl-8"
+                                  type="number"
+                                  inputMode="decimal"
+                                  disabled={isTemporary}
+                                  {...field}
+                                  value={field.value ?? ''}
+                                  onChange={(e) => {
+                                    field.onChange(
+                                      e.target.value === '' ? null : Number(e.target.value)
+                                    );
+                                    revalidateField('depositAmount');
+                                  }}
+                                  placeholder={isTemporary ? 'N/A' : 'Enter amount'}
+                                  aria-invalid={!!fieldState.error}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
 
                   {/* Row 2: Agency Fee Amount */}
-                  <div
-                    className={cn('flex flex-col', {
-                      'form-content-card-disabled': isTemporary,
-                      'form-content-card': !isTemporary,
-                    })}
-                  >
-                    <FormField
-                      control={control}
-                      name="agencyFeeAmount"
-                      render={({ field, fieldState }) => (
-                        <FormItem>
-                          <div className="flex justify-between items-baseline">
-                            <FormLabel className={cn('flex-2', { 'text-muted': isTemporary })}>
-                              Property has agency fee
-                              {isTemporary && (
-                                <span className="text-xs text-neutral-400 font-light">
-                                  {' '}
-                                  ( Not applicable )
-                                </span>
-                              )}
-                            </FormLabel>
-                            <FormField
-                              control={control}
-                              name="hasAgencyFee"
-                              render={({
-                                field: agencyFeeField,
-                                fieldState: agencyFeeFieldState,
-                              }) => (
-                                <SelectableList
-                                  className="flex-1 w-full mb-1"
-                                  itemClassName="justify-center"
-                                  ariaLabel="Property has agency fee"
-                                  value={agencyFeeField.value ?? null}
-                                  onChange={(v) => {
-                                    agencyFeeField.onChange(v);
-                                    revalidateField('hasAgencyFee');
-                                  }}
-                                  showIndicator={false}
-                                  disabled={isTemporary}
-                                  options={[
-                                    {
-                                      value: true,
-                                      label: (
-                                        <span>
-                                          <Check size={20} className="text-emerald-600" />
-                                          <span className="sr-only">Yes</span>
-                                        </span>
-                                      ),
-                                    },
-                                    {
-                                      value: false,
-                                      label: (
-                                        <span>
-                                          <X size={20} className="text-destructive" />
-                                          <span className="sr-only">No</span>
-                                        </span>
-                                      ),
-                                    },
-                                  ]}
-                                  orientation="horizontal"
-                                  error={!!agencyFeeFieldState.error}
-                                />
-                              )}
-                            />
-                          </div>
-                          <FormControl>
-                            {form.getValues('hasAgencyFee') && (
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">
-                                  €
-                                </span>
-                                <Input
-                                  className="pl-8"
-                                  type="number"
-                                  inputMode="decimal"
-                                  {...field}
-                                  value={field.value ?? ''}
-                                  disabled={isTemporary || !hasAgencyFee}
-                                  onChange={(e) => {
-                                    field.onChange(
-                                      e.target.value === '' ? null : Number(e.target.value)
-                                    );
-                                    revalidateField('agencyFeeAmount');
-                                  }}
-                                  placeholder={
-                                    isTemporary
-                                      ? 'N/A'
-                                      : hasAgencyFee
-                                        ? 'Enter amount'
-                                        : 'No agency fee'
-                                  }
-                                  aria-invalid={!!fieldState.error}
-                                />
-                              </div>
-                            )}
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Row 3: Bills Monthly Estimate */}
-                  <div
-                    className={cn('flex flex-col', {
-                      'form-content-card-disabled': isTemporary,
-                      'form-content-card': !isTemporary,
-                    })}
-                  >
-                    <FormField
-                      control={control}
-                      name="billsMonthlyEstimate"
-                      render={({ field, fieldState }) => (
-                        <FormItem>
-                          <div className="flex justify-between items-baseline gap-3">
-                            <FormLabel className={cn('flex-1', { 'text-muted': isTemporary })}>
-                              Bills
-                              {isTemporary && (
-                                <span className="text-xs text-neutral-400 font-light">
-                                  {' '}
-                                  ( Not applicable )
-                                </span>
-                              )}
-                            </FormLabel>
-                            <FormField
-                              control={control}
-                              name="billsPolicy"
-                              render={({
-                                field: billsPolicyField,
-                                fieldState: billsPolicyFieldState,
-                              }) => (
-                                <SelectableList
-                                  className="md:flex-2 w-full mb-1"
-                                  itemClassName="justify-center"
-                                  ariaLabel="Bills policy selection"
-                                  value={billsPolicyField.value ?? null}
-                                  onChange={(v) => {
-                                    billsPolicyField.onChange(v);
-                                    revalidateField('billsPolicy');
-                                  }}
-                                  showIndicator={false}
-                                  disabled={isTemporary}
-                                  options={[
-                                    { value: BillsPolicy.INCLUDED, label: 'Included' },
-                                    { value: BillsPolicy.EXCLUDED, label: 'Excluded' },
-                                    { value: BillsPolicy.PARTIAL, label: 'Partial' },
-                                  ]}
-                                  orientation="horizontal"
-                                  error={!!billsPolicyFieldState.error}
-                                />
-                              )}
-                            />
-                          </div>
-                          <FormControl>
-                            {(form.getValues('billsPolicy') === BillsPolicy.EXCLUDED ||
-                              form.getValues('billsPolicy') === BillsPolicy.PARTIAL) && (
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">
-                                  €
-                                </span>
-                                <Input
-                                  className="pl-8"
-                                  type="number"
-                                  inputMode="decimal"
-                                  disabled={
-                                    isTemporary ||
-                                    !(
-                                      billsPolicy === BillsPolicy.EXCLUDED ||
-                                      billsPolicy === BillsPolicy.PARTIAL
-                                    )
-                                  }
-                                  {...field}
-                                  value={field.value ?? ''}
-                                  onChange={(e) => {
-                                    field.onChange(
-                                      e.target.value === '' ? null : Number(e.target.value)
-                                    );
-                                    revalidateField('billsMonthlyEstimate');
-                                  }}
-                                  placeholder={
-                                    isTemporary
-                                      ? 'N/A'
-                                      : billsPolicy === BillsPolicy.EXCLUDED ||
-                                          billsPolicy === BillsPolicy.PARTIAL
-                                        ? 'Enter estimate'
-                                        : 'Bills included'
-                                  }
-                                  aria-invalid={!!fieldState.error}
-                                />
-                              </div>
-                            )}
-                          </FormControl>
-                          <FormMessage />
-                          {/* Optional notes about bills */}
-                          <div className="mt-3">
-                            <FormField
-                              control={control}
-                              name="billsNotes"
-                              render={({ field: notesField }) => (
-                                <FormItem>
-                                  <FormLabel
-                                    className={cn('text-sm', { 'text-muted': isTemporary })}
-                                  >
-                                    Additional notes (optional)
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Textarea
-                                      rows={3}
-                                      placeholder="Any notes about bills"
-                                      {...notesField}
-                                      value={notesField.value ?? ''}
-                                      disabled={isTemporary}
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Property features (Step 4) - elegant grouped layout */}
-              {currentStep === 4 && (
-                <div className="space-y-4">
-                  <div className="flex flex-col gap-4">
-                    {/* Left: common features grouped */}
-                    <div className="form-content-card p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <div className="font-medium">Basic features</div>
-                          <div className="text-xs text-muted-foreground">Common amenities</div>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        <FormField
-                          control={control}
-                          name="furnished"
-                          render={({ field }) => (
-                            <SelectableChip
-                              selected={!!field.value}
-                              onSelect={(s) => field.onChange(Boolean(s))}
-                              icon={<span className="text-lg">🛋️</span>}
-                              label="Furnished"
-                            />
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="hasElevator"
-                          render={({ field }) => (
-                            <SelectableChip
-                              selected={!!field.value}
-                              onSelect={(s) => field.onChange(Boolean(s))}
-                              icon={<span className="text-lg">⬆️</span>}
-                              label="Elevator"
-                            />
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="privateBathroom"
-                          render={({ field }) => (
-                            <SelectableChip
-                              selected={!!field.value}
-                              onSelect={(s) => field.onChange(Boolean(s))}
-                              icon={<span className="text-lg">🛁</span>}
-                              label="Private bathroom"
-                            />
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="kitchenEquipped"
-                          render={({ field }) => (
-                            <SelectableChip
-                              selected={!!field.value}
-                              onSelect={(s) => field.onChange(Boolean(s))}
-                              icon={<span className="text-lg">🍽️</span>}
-                              label="Kitchen equipped"
-                            />
-                          )}
-                        />
-                        <FormField
-                          control={control}
-                          name="balcony"
-                          render={({ field }) => (
-                            <SelectableChip
-                              selected={!!field.value}
-                              onSelect={(s) => field.onChange(Boolean(s))}
-                              icon={<span className="text-lg">🌿</span>}
-                              label="Balcony"
-                            />
-                          )}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Right: additional features + floor + heating */}
-                    <div className="form-content-card p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <div className="font-medium">More details</div>
-                          <div className="text-xs text-muted-foreground">
-                            Extra amenities & property specifics
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        <FormField
-                          control={control}
-                          name="wifi"
-                          render={({ field }) => (
-                            <SelectableChip
-                              selected={!!field.value}
-                              onSelect={(s) => field.onChange(Boolean(s))}
-                              icon={<span className="text-lg">📶</span>}
-                              label="Wi‑Fi"
-                            />
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="washingMachine"
-                          render={({ field }) => (
-                            <SelectableChip
-                              selected={!!field.value}
-                              onSelect={(s) => field.onChange(Boolean(s))}
-                              icon={<span className="text-lg">👕</span>}
-                              label="Washing machine"
-                            />
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="dishwasher"
-                          render={({ field }) => (
-                            <SelectableChip
-                              selected={!!field.value}
-                              onSelect={(s) => field.onChange(Boolean(s))}
-                              icon={<span className="text-lg">🍽️</span>}
-                              label="Dishwasher"
-                            />
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="doubleGlazedWindows"
-                          render={({ field }) => (
-                            <SelectableChip
-                              selected={!!field.value}
-                              onSelect={(s) => field.onChange(Boolean(s))}
-                              icon={<span className="text-lg">🪟</span>}
-                              label="Double glazed"
-                            />
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="airConditioning"
-                          render={({ field }) => (
-                            <SelectableChip
-                              selected={!!field.value}
-                              onSelect={(s) => field.onChange(Boolean(s))}
-                              icon={<span className="text-lg">❄️</span>}
-                              label="Air conditioning"
-                            />
-                          )}
-                        />
-                      </div>
-
-                      <div className="mt-4 grid grid-cols-1 gap-3">
-                        <FormField
-                          control={control}
-                          name="floorNumber"
-                          render={({ field, fieldState }) => (
-                            <FormItem className="flex items-baseline justify-between border rounded-2xl p-3">
-                              <FormLabel>Floor</FormLabel>
-                              <FormControl>
-                                <div className="w-max">
-                                  <Counter
-                                    number={typeof field.value === 'number' ? field.value : 0}
-                                    setNumber={(n) => {
-                                      // Store numeric floor (allow negatives); keep null only if explicitly cleared elsewhere
-                                      field.onChange(Number(n));
-                                      revalidateField('floorNumber');
-                                    }}
-                                  />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="heatingType"
-                          render={({ field, fieldState }) => (
-                            <FormItem className="flex flex-col border rounded-2xl p-3">
-                              <div className="flex items-baseline justify-between">
-                                <FormLabel>Heating</FormLabel>
-                                <FormControl>
-                                  <SelectableList
-                                    ariaLabel="Heating type"
-                                    value={field.value ?? null}
-                                    onChange={(v) => {
-                                      field.onChange(v);
-                                      revalidateField('heatingType');
-                                    }}
-                                    options={[
-                                      { value: HeatingType.CENTRAL, label: 'Central' },
-                                      { value: HeatingType.INDEPENDENT, label: 'Independent' },
-                                      { value: HeatingType.UNKNOWN, label: 'Unknown' },
-                                    ]}
-                                    orientation="horizontal"
-                                    showIndicator={false}
-                                    error={!!fieldState.error}
-                                  />
-                                </FormControl>
-                              </div>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Household */}
-              {currentStep === 5 && (
-                <div className="flex flex-col space-y-4">
-                  {/* current occupants & gender */}
-                  <div className="form-content-card">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <div className="font-medium">Household</div>
-                        <div className="text-xs text-muted-foreground">
-                          Current occupants & gender
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mt-3">
+                  {!isTemporary && (
+                    <div className="flex flex-col form-content-card">
                       <FormField
                         control={control}
-                        name="householdSize"
+                        name="agencyFeeAmount"
                         render={({ field, fieldState }) => (
-                          <FormItem className="flex items-baseline w-full justify-between border rounded-2xl p-3">
-                            <FormLabel>Household size</FormLabel>
+                          <FormItem>
+                            <div className="flex justify-between items-center">
+                              <FormLabel className="flex-2">Property has agency fee</FormLabel>
+                              <FormField
+                                control={control}
+                                name="hasAgencyFee"
+                                render={({
+                                  field: agencyFeeField,
+                                  fieldState: agencyFeeFieldState,
+                                }) => (
+                                  <SelectableList
+                                    className="flex-1 w-full"
+                                    itemClassName="justify-center"
+                                    ariaLabel="Property has agency fee"
+                                    value={agencyFeeField.value ?? null}
+                                    onChange={(v) => {
+                                      agencyFeeField.onChange(v);
+                                      revalidateField('hasAgencyFee');
+                                      // If user explicitly selects "No" for agency fee, clear the amount and its errors
+                                      if (v === false) {
+                                        form.setValue('agencyFeeAmount', null, {
+                                          shouldDirty: true,
+                                          shouldValidate: true,
+                                        });
+                                        form.clearErrors('agencyFeeAmount');
+                                      }
+                                    }}
+                                    showIndicator={false}
+                                    disabled={isTemporary}
+                                    options={[
+                                      {
+                                        value: true,
+                                        label: (
+                                          <span>
+                                            <Check size={20} className="text-emerald-600" />
+                                            <span className="sr-only">Yes</span>
+                                          </span>
+                                        ),
+                                      },
+                                      {
+                                        value: false,
+                                        label: (
+                                          <span>
+                                            <X size={20} className="text-destructive" />
+                                            <span className="sr-only">No</span>
+                                          </span>
+                                        ),
+                                      },
+                                    ]}
+                                    orientation="horizontal"
+                                    error={!!agencyFeeFieldState.error}
+                                  />
+                                )}
+                              />
+                            </div>
+                            <FormControl>
+                              {form.getValues('hasAgencyFee') && (
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">
+                                    €
+                                  </span>
+                                  <Input
+                                    className="pl-8"
+                                    type="number"
+                                    inputMode="decimal"
+                                    {...field}
+                                    value={field.value ?? ''}
+                                    disabled={isTemporary || !hasAgencyFee}
+                                    onChange={(e) => {
+                                      field.onChange(
+                                        e.target.value === '' ? null : Number(e.target.value)
+                                      );
+                                      revalidateField('agencyFeeAmount');
+                                    }}
+                                    placeholder={
+                                      isTemporary
+                                        ? 'N/A'
+                                        : hasAgencyFee
+                                          ? 'Enter amount'
+                                          : 'No agency fee'
+                                    }
+                                    aria-invalid={!!fieldState.error}
+                                  />
+                                </div>
+                              )}
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+
+                  {/* Row 3: Bills Monthly Estimate */}
+                  {!isTemporary && (
+                    <div className="flex flex-col form-content-card">
+                      <FormField
+                        control={control}
+                        name="billsMonthlyEstimate"
+                        render={({ field, fieldState }) => (
+                          <FormItem>
+                            <div className="flex flex-col md:flex-row justify-between items-baseline gap-3">
+                              <FormLabel className={cn('flex-1', { 'text-muted': isTemporary })}>
+                                Bills
+                              </FormLabel>
+                              <FormField
+                                control={control}
+                                name="billsPolicy"
+                                render={({
+                                  field: billsPolicyField,
+                                  fieldState: billsPolicyFieldState,
+                                }) => (
+                                  <SelectableList
+                                    className="md:flex-2 w-full"
+                                    itemClassName="justify-center"
+                                    ariaLabel="Bills policy selection"
+                                    value={billsPolicyField.value ?? null}
+                                    onChange={(v) => {
+                                      if (v === BillsPolicy.INCLUDED) {
+                                        form.setValue('billsMonthlyEstimate', null, {
+                                          shouldDirty: true,
+                                          shouldValidate: true,
+                                        });
+                                        form.clearErrors('billsMonthlyEstimate');
+                                      }
+                                      billsPolicyField.onChange(v);
+                                      revalidateField('billsPolicy');
+                                    }}
+                                    showIndicator={false}
+                                    disabled={isTemporary}
+                                    options={[
+                                      { value: BillsPolicy.INCLUDED, label: 'Included' },
+                                      { value: BillsPolicy.EXCLUDED, label: 'Excluded' },
+                                      { value: BillsPolicy.PARTIAL, label: 'Partial' },
+                                    ]}
+                                    orientation="horizontal"
+                                    error={!!billsPolicyFieldState.error}
+                                  />
+                                )}
+                              />
+                            </div>
+                            <FormControl>
+                              {(form.getValues('billsPolicy') === BillsPolicy.EXCLUDED ||
+                                form.getValues('billsPolicy') === BillsPolicy.PARTIAL) && (
+                                <FormItem className="mt-4">
+                                  <FormLabel className="pl-2">
+                                    Monthly Estimate{' '}
+                                    <span className="text-xs font-light text-neutral-400">
+                                      Optional
+                                    </span>
+                                  </FormLabel>
+                                  <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">
+                                      €
+                                    </span>
+                                    <Input
+                                      className="pl-8"
+                                      type="number"
+                                      inputMode="decimal"
+                                      disabled={
+                                        isTemporary ||
+                                        !(
+                                          billsPolicy === BillsPolicy.EXCLUDED ||
+                                          billsPolicy === BillsPolicy.PARTIAL
+                                        )
+                                      }
+                                      {...field}
+                                      value={field.value ?? ''}
+                                      onChange={(e) => {
+                                        field.onChange(
+                                          e.target.value === '' ? null : Number(e.target.value)
+                                        );
+                                        revalidateField('billsMonthlyEstimate');
+                                      }}
+                                      placeholder={
+                                        isTemporary
+                                          ? 'N/A'
+                                          : billsPolicy === BillsPolicy.EXCLUDED ||
+                                              billsPolicy === BillsPolicy.PARTIAL
+                                            ? 'Enter estimate'
+                                            : 'Bills included'
+                                      }
+                                      aria-invalid={!!fieldState.error}
+                                    />
+                                  </div>
+                                </FormItem>
+                              )}
+                            </FormControl>
+                            <FormMessage />
+                            {/* Optional notes about bills */}
+                            <div className="mt-3">
+                              <FormField
+                                control={control}
+                                name="billsNotes"
+                                render={({ field: notesField }) => (
+                                  <FormItem>
+                                    <FormLabel className="pl-2">
+                                      Additional notes
+                                      <span className="text-xs font-light text-neutral-400">
+                                        Optional
+                                      </span>
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Textarea
+                                        rows={3}
+                                        placeholder="Any additional notes about bills"
+                                        {...notesField}
+                                        value={notesField.value ?? ''}
+                                        disabled={isTemporary}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Property features (Step 4) */}
+              {currentStep === 4 && (
+                <div className="flex flex-col space-y-2">
+                  {/* Essential features */}
+                  <div className="form-content-card space-y-2">
+                    <div className="flex flex-col mb-4">
+                      <div className="font-medium">🏠 Essential features</div>
+                      <div className="text-xs text-muted-foreground pl-6">
+                        Core attributes defining the property
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 border rounded-4xl p-4">
+                      <FormField
+                        control={control}
+                        name="newlyRenovated"
+                        render={({ field }) => (
+                          <SelectableChip
+                            selected={!!field.value}
+                            onSelect={(s) => field.onChange(Boolean(s))}
+                            label="Newly renovated"
+                          />
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="furnished"
+                        render={({ field }) => (
+                          <SelectableChip
+                            selected={!!field.value}
+                            onSelect={(s) => field.onChange(Boolean(s))}
+                            icon={<span className="text-lg">🛋️</span>}
+                            label="Furnished"
+                          />
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="kitchenEquipped"
+                        render={({ field }) => (
+                          <SelectableChip
+                            selected={!!field.value}
+                            onSelect={(s) => field.onChange(Boolean(s))}
+                            icon={<span className="text-lg">🍽️</span>}
+                            label="Kitchen equipped"
+                          />
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="privateBathroom"
+                        render={({ field }) => (
+                          <SelectableChip
+                            selected={!!field.value}
+                            onSelect={(s) => field.onChange(Boolean(s))}
+                            icon={<span className="text-lg">🛁</span>}
+                            label="Private bathroom"
+                          />
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="balcony"
+                        render={({ field }) => (
+                          <SelectableChip
+                            selected={!!field.value}
+                            onSelect={(s) => field.onChange(Boolean(s))}
+                            icon={<span className="text-lg">🌿</span>}
+                            label="Balcony"
+                          />
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="hasElevator"
+                        render={({ field }) => (
+                          <SelectableChip
+                            selected={!!field.value}
+                            onSelect={(s) => field.onChange(Boolean(s))}
+                            icon={<span className="text-lg">⬆️</span>}
+                            label="Elevator"
+                          />
+                        )}
+                      />
+                    </div>
+
+                    <div className="flex flex-col space-y-2">
+                      <FormField
+                        control={control}
+                        name="floorNumber"
+                        render={({ field, fieldState }) => (
+                          <FormItem className="flex items-baseline justify-between border rounded-4xl p-3">
+                            <FormLabel className="pl-4">Floor</FormLabel>
                             <FormControl>
                               <div className="w-max">
                                 <Counter
-                                  number={typeof field.value === 'number' ? field.value : 1}
+                                  number={typeof field.value === 'number' ? field.value : 0}
                                   setNumber={(n) => {
-                                    field.onChange(Number(n));
-                                    revalidateField('householdSize');
+                                    // clamp to -2..20
+                                    const clamped = Math.max(-2, Math.min(20, Number(n)));
+                                    field.onChange(Number(clamped));
+                                    revalidateField('floorNumber');
                                   }}
                                 />
                               </div>
@@ -1491,24 +1358,47 @@ export function HousingCreateDialog() {
 
                       <FormField
                         control={control}
-                        name="householdGender"
+                        name="numberOfBathrooms"
                         render={({ field, fieldState }) => (
-                          <FormItem className="flex w-full flex-col border rounded-2xl p-3">
+                          <FormItem className="flex items-baseline justify-between border rounded-4xl p-3">
+                            <FormLabel className="pl-4">Number of bathrooms</FormLabel>
+                            <FormControl>
+                              <div className="w-max">
+                                <Counter
+                                  number={typeof field.value === 'number' ? field.value : 1}
+                                  setNumber={(n) => {
+                                    const clamped = Math.max(1, Math.min(4, Number(n)));
+                                    field.onChange(Number(clamped));
+                                    revalidateField('numberOfBathrooms');
+                                  }}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="heatingType"
+                        render={({ field, fieldState }) => (
+                          <FormItem className="flex flex-col border rounded-4xl p-3">
                             <div className="flex flex-col md:flex-row items-baseline justify-between gap-4">
-                              <FormLabel>Household gender</FormLabel>
+                              <FormLabel className="pl-4">Heating</FormLabel>
                               <FormControl>
                                 <SelectableList
-                                  className="w-full"
-                                  ariaLabel="Household gender"
+                                  className="w-full md:w-auto"
+                                  ariaLabel="Heating type"
                                   value={field.value ?? null}
                                   onChange={(v) => {
                                     field.onChange(v);
-                                    revalidateField('householdGender');
+                                    revalidateField('heatingType');
                                   }}
                                   options={[
-                                    { value: HouseholdGender.MIXED, label: 'Mixed' },
-                                    { value: HouseholdGender.FEMALE_ONLY, label: 'Female only' },
-                                    { value: HouseholdGender.MALE_ONLY, label: 'Male only' },
+                                    { value: HeatingType.CENTRAL, label: 'Central' },
+                                    { value: HeatingType.INDEPENDENT, label: 'Independent' },
+                                    { value: HeatingType.UNKNOWN, label: 'Unknown' },
                                   ]}
                                   orientation="horizontal"
                                   showIndicator={false}
@@ -1523,8 +1413,100 @@ export function HousingCreateDialog() {
                     </div>
                   </div>
 
-                  {/* preferences & description */}
-                  <div className="form-content-card">
+                  {/* Comfort & convenience */}
+                  <div className="form-content-card space-y-2">
+                    <div className="flex flex-col mb-4">
+                      <div className="font-medium">🔌 Comfort & convenience</div>
+                      <div className="text-xs text-muted-foreground pl-6">
+                        Enhancements for daily living
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 border rounded-4xl p-4">
+                      <FormField
+                        control={control}
+                        name="wifi"
+                        render={({ field }) => (
+                          <SelectableChip
+                            selected={!!field.value}
+                            onSelect={(s) => field.onChange(Boolean(s))}
+                            icon={<span className="text-lg">📶</span>}
+                            label="Wi‑Fi"
+                          />
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="airConditioning"
+                        render={({ field }) => (
+                          <SelectableChip
+                            selected={!!field.value}
+                            onSelect={(s) => field.onChange(Boolean(s))}
+                            icon={<span className="text-lg">❄️</span>}
+                            label="Air conditioning"
+                          />
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="dishwasher"
+                        render={({ field }) => (
+                          <SelectableChip
+                            selected={!!field.value}
+                            onSelect={(s) => field.onChange(Boolean(s))}
+                            icon={<span className="text-lg">🍽️</span>}
+                            label="Dishwasher"
+                          />
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="washingMachine"
+                        render={({ field }) => (
+                          <SelectableChip
+                            selected={!!field.value}
+                            onSelect={(s) => field.onChange(Boolean(s))}
+                            icon={<span className="text-lg">👕</span>}
+                            label="Washing machine"
+                          />
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="clothesDryer"
+                        render={({ field }) => (
+                          <SelectableChip
+                            selected={!!field.value}
+                            onSelect={(s) => field.onChange(Boolean(s))}
+                            label="Clothes dryer"
+                          />
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="doubleGlazedWindows"
+                        render={({ field }) => (
+                          <SelectableChip
+                            selected={!!field.value}
+                            onSelect={(s) => field.onChange(Boolean(s))}
+                            icon={<span className="text-lg">🪟</span>}
+                            label="Double glazed"
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 5: Preferences */}
+              {currentStep === 5 && (
+                <div className="flex flex-col space-y-4">
+                  <div className="form-content-card space-y-8">
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <div className="font-medium">Preferences</div>
@@ -1539,11 +1521,12 @@ export function HousingCreateDialog() {
                         control={control}
                         name="genderPreference"
                         render={({ field, fieldState }) => (
-                          <FormItem className="flex flex-col border rounded-2xl p-3">
-                            <div className="flex items-baseline justify-between">
-                              <FormLabel>Looking for</FormLabel>
+                          <FormItem className="flex flex-col w-full border rounded-4xl p-3">
+                            <div className="flex flex-col md:flex-row items-baseline justify-between  gap-4">
+                              <FormLabel className="pl-4">Looking for</FormLabel>
                               <FormControl>
                                 <SelectableList
+                                  className="w-full md:w-auto"
                                   ariaLabel="Gender preference"
                                   value={field.value ?? null}
                                   onChange={(v) => {
@@ -1571,13 +1554,17 @@ export function HousingCreateDialog() {
                       <FormField
                         control={control}
                         name="householdDescription"
-                        render={({ field }) => (
+                        render={({ field, fieldState }) => (
                           <FormItem>
-                            <FormLabel>Household description</FormLabel>
+                            <FormLabel className="pl-2">
+                              Additional notes
+                              <span className="text-xs font-light text-neutral-400">Optional</span>
+                            </FormLabel>
                             <FormControl>
                               <Textarea
+                                className="shadow-none"
                                 rows={3}
-                                placeholder="Tell about roommates, atmosphere, routines..."
+                                placeholder="Any additional notes about your preferences..."
                                 {...field}
                                 value={field.value ?? ''}
                               />
@@ -1593,151 +1580,61 @@ export function HousingCreateDialog() {
 
               {/* Location */}
               {currentStep === 6 && (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  {/* Header with info */}
+                  <div className="flex flex-col gap-2 p-3">
+                    <h3 className="text-lg font-semibold">Select Property Location</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Click on the map or search below to pinpoint your property location within{' '}
+                      <span className="font-medium text-foreground">{userCity?.name}</span>.
+                    </p>
+                  </div>
+
+                  {/* Interactive map for location selection */}
+                  <div>
                     <FormField
                       control={control}
                       name="neighborhood"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Neighborhood</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., San Salvario"
-                              {...field}
-                              value={field.value ?? ''}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={control}
-                      name="streetHint"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Street hint</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., near Dante metro"
-                              {...field}
-                              value={field.value ?? ''}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                    <FormField
-                      control={control}
-                      name="lat"
                       render={({ field, fieldState }) => (
-                        <FormItem>
-                          <FormLabel>Latitude</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              inputMode="decimal"
-                              step="0.000001"
-                              {...field}
-                              value={field.value ?? ''}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value === '' ? null : Number(e.target.value)
-                                )
+                        <div>
+                          <CityMapWrapper
+                            city={userCity}
+                            initialLat={form.getValues('lat')}
+                            initialLng={form.getValues('lng')}
+                            initialNeighborhood={form.getValues('neighborhood')}
+                            onChange={(lat, lng, neighborhood) => {
+                              form.setValue('lat', lat, {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              });
+                              form.setValue('lng', lng, {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              });
+                              // neighborhood may be a string or undefined/null
+                              if (neighborhood) {
+                                form.setValue('neighborhood', neighborhood, {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                });
+                              } else {
+                                form.setValue('neighborhood', '', {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                });
                               }
-                              aria-invalid={!!fieldState.error}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={control}
-                      name="lng"
-                      render={({ field, fieldState }) => (
-                        <FormItem>
-                          <FormLabel>Longitude</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              inputMode="decimal"
-                              step="0.000001"
-                              {...field}
-                              value={field.value ?? ''}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value === '' ? null : Number(e.target.value)
-                                )
-                              }
-                              aria-invalid={!!fieldState.error}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                              revalidateField('lat');
+                              revalidateField('lng');
+                              revalidateField('neighborhood');
+                            }}
+                            onPendingChange={(p) => setMapChangePending(Boolean(p))}
+                            neighborhoodFieldState={fieldState}
+                          />
+                        </div>
                       )}
                     />
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                    <FormField
-                      control={control}
-                      name="transitLines"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Transit lines (one per line)</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              rows={3}
-                              {...field}
-                              value={(field.value || []).join('\n')}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value
-                                    .split('\n')
-                                    .map((s) => s.trim())
-                                    .filter(Boolean)
-                                )
-                              }
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={control}
-                      name="shopsNearby"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Shops nearby (one per line)</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              rows={3}
-                              {...field}
-                              value={(field.value || []).join('\n')}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value
-                                    .split('\n')
-                                    .map((s) => s.trim())
-                                    .filter(Boolean)
-                                )
-                              }
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </>
+                </div>
               )}
 
               {/* Notes */}
@@ -1778,11 +1675,7 @@ export function HousingCreateDialog() {
                         ? (form.getValues().propertyType ?? '—')
                         : '—'}
                     </div>
-                    {isRoomy && (
-                      <div>
-                        <b>Room type:</b> {form.getValues().roomType ?? '—'}
-                      </div>
-                    )}
+                    {/* roomType removed; unitType represents room sizing */}
                     {/* Beds fields removed */}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1872,22 +1765,6 @@ export function HousingCreateDialog() {
                     <div>
                       <b>Neighborhood:</b> {form.getValues().neighborhood ?? '—'}
                     </div>
-                    <div>
-                      <b>Street hint:</b> {form.getValues().streetHint ?? '—'}
-                    </div>
-                    <div>
-                      <b>Latitude:</b> {form.getValues().lat ?? '—'}
-                    </div>
-                    <div>
-                      <b>Longitude:</b> {form.getValues().lng ?? '—'}
-                    </div>
-                    <div>
-                      <b>Transit lines:</b>{' '}
-                      {(form.getValues().transitLines || []).join(', ') || '—'}
-                    </div>
-                    <div>
-                      <b>Shops nearby:</b> {(form.getValues().shopsNearby || []).join(', ') || '—'}
-                    </div>
                   </div>
                   <div>
                     <b>Notes:</b> {form.getValues().notes ?? '—'}
@@ -1908,8 +1785,13 @@ export function HousingCreateDialog() {
                     </Button>
                   )}
                   {currentStep < 8 && (
-                    <Button type="button" className="ad-housing" onClick={goNext}>
-                      Next
+                    <Button
+                      type="button"
+                      className="ad-housing"
+                      onClick={goNext}
+                      disabled={mapChangePending}
+                    >
+                      {mapChangePending ? 'Working…' : 'Next'}
                     </Button>
                   )}
                   {currentStep === 8 && (

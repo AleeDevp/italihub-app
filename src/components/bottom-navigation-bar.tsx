@@ -21,7 +21,7 @@ type NavItem = {
 export function BottomNavigationBar() {
   const isMobile = useIsMobile();
   const pathname = usePathname();
-  const PROTECTED_KEYS = useMemo(() => new Set(['post-ad', 'ads', 'dashboard']), []);
+  const PROTECTED_KEYS = useMemo(() => new Set(['create-ad', 'ads-management', 'dashboard']), []);
 
   // Define nav items left-to-right from canonical route definitions with showInNav
   const items: NavItem[] = useMemo(() => {

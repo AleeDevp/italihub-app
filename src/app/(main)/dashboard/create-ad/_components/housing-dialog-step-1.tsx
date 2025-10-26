@@ -2,14 +2,8 @@
 
 import { FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { SelectableList } from '@/components/ui/selectable-list';
-import {
-  HousingPropertyType,
-  HousingRentalKind,
-  HousingRoomType,
-  HousingUnitType,
-} from '@/generated/prisma';
+import { HousingPropertyType, HousingRentalKind, HousingUnitType } from '@/generated/prisma';
 import type { HousingFormValues } from '@/lib/schemas/ads/housing-schema';
-import { cn } from '@/lib/utils';
 import type { Control } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
 
@@ -20,10 +14,13 @@ type Props = {
 
 export function HousingDialogStep1({ control, revalidateField }: Props) {
   // Centralized dependency: compute enabled state from actual current values
-  const unitTypeVal = useWatch({ control, name: 'unitType' });
-  const roomEnabled = unitTypeVal === HousingUnitType.ROOM || unitTypeVal === HousingUnitType.BED;
+  const propertyTypeVal = useWatch({ control, name: 'propertyType' });
+
+  // If property is STUDIO, only whole apartment is allowed
+  const isStudio = propertyTypeVal === HousingPropertyType.STUDIO;
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="form-content-card">
         <FormField
           control={control}
@@ -96,51 +93,31 @@ export function HousingDialogStep1({ control, revalidateField }: Props) {
                 ariaLabel="Unit type"
                 value={field.value}
                 onChange={(val) => {
+                  // Prevent changing to room/bed when property is studio
+                  if (isStudio && val !== HousingUnitType.WHOLE_APARTMENT) return;
                   field.onChange(val);
                   revalidateField('unitType');
                 }}
                 options={[
                   { value: HousingUnitType.WHOLE_APARTMENT, label: 'Whole apartment' },
-                  { value: HousingUnitType.ROOM, label: 'Room' },
-                  { value: HousingUnitType.BED, label: 'Bed' },
+                  { value: HousingUnitType.SINGLE_ROOM, label: 'Single room', disabled: isStudio },
+                  { value: HousingUnitType.DOUBLE_ROOM, label: 'Double room', disabled: isStudio },
+                  { value: HousingUnitType.TRIPLE_ROOM, label: 'Triple room', disabled: isStudio },
                 ]}
                 error={!!fieldState.error}
               />
+              {isStudio && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Studios are whole apartments — room/bed options aren't applicable.
+                </p>
+              )}
               <FormMessage />
             </FormItem>
           )}
         />
       </div>
 
-      {/* Room type depends on Unit type = ROOM or BED (centralized rule) */}
-      <div className={cn(!roomEnabled ? 'form-content-card-disabled' : 'form-content-card')}>
-        <FormField
-          control={control}
-          name="roomType"
-          render={({ field, fieldState }) => (
-            <FormItem>
-              <FormLabel className={cn({ 'text-muted': !roomEnabled })}>Room type</FormLabel>
-              <SelectableList
-                className="mt-2"
-                ariaLabel="Room type"
-                value={field.value}
-                onChange={(val) => {
-                  field.onChange(val);
-                  revalidateField('roomType');
-                }}
-                options={[
-                  { value: HousingRoomType.SINGLE, label: 'Single' },
-                  { value: HousingRoomType.DOUBLE, label: 'Double' },
-                  { value: HousingRoomType.TRIPLE, label: 'Triple' },
-                ]}
-                disabled={!roomEnabled}
-                error={!!fieldState.error}
-              />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
+      {/* roomType field removed — unitType encodes room sizing */}
     </div>
   );
 }

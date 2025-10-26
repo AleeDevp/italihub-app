@@ -58,8 +58,9 @@ export type HousingRentalKind =
 
 export const HousingUnitType = {
   WHOLE_APARTMENT: 'WHOLE_APARTMENT',
-  ROOM: 'ROOM',
-  BED: 'BED',
+  SINGLE_ROOM: 'SINGLE_ROOM',
+  DOUBLE_ROOM: 'DOUBLE_ROOM',
+  TRIPLE_ROOM: 'TRIPLE_ROOM',
 } as const
 
 export type HousingUnitType =
@@ -75,15 +76,6 @@ export const HousingPropertyType = {
 
 export type HousingPropertyType =
   typeof HousingPropertyType[keyof typeof HousingPropertyType]
-
-export const HousingRoomType = {
-  SINGLE: 'SINGLE',
-  DOUBLE: 'DOUBLE',
-  TRIPLE: 'TRIPLE',
-} as const
-
-export type HousingRoomType =
-  typeof HousingRoomType[keyof typeof HousingRoomType]
 
 export const HousingContractType = {
   NONE: 'NONE',

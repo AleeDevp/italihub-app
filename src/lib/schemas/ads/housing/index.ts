@@ -23,17 +23,12 @@ import {
   HousingPriceType,
   HousingPropertyType,
   HousingRentalKind,
-  HousingRoomType,
+  // HousingRoomType removed
   HousingUnitType,
 } from '@/generated/prisma';
 import { z } from 'zod';
 
-import type {
-  PermanentRentalPricing,
-  Step1Fields,
-  Step2Fields,
-  TemporaryRentalPricing,
-} from './types';
+import type { PermanentRentalPricing, Step2Fields, TemporaryRentalPricing } from './types';
 import { currencyInt, optionalNonEmptyTrimmed, requiredEnum, validationUtils } from './utils';
 import { VALIDATION_MESSAGES } from './validation-messages';
 
@@ -46,10 +41,7 @@ const baseHousingSchema = z.object({
   rentalKind: requiredEnum(HousingRentalKind),
   unitType: requiredEnum(HousingUnitType),
   propertyType: requiredEnum(HousingPropertyType, VALIDATION_MESSAGES.SELECT_OPTION),
-  roomType: z
-    .nativeEnum(HousingRoomType, { required_error: VALIDATION_MESSAGES.SELECT_OPTION })
-    .optional()
-    .nullable(),
+  // roomType removed; unitType encodes room sizing
 
   // Step 2: Availability & contract
   availabilityStartDate: z
@@ -81,7 +73,13 @@ const baseHousingSchema = z.object({
 
   // Step 4: Property features
   furnished: z.boolean().default(false),
-  floorNumber: z.number().int(VALIDATION_MESSAGES.PRICE.MUST_BE_WHOLE_NUMBER).optional().nullable(),
+  floorNumber: z
+    .number({ invalid_type_error: VALIDATION_MESSAGES.PRICE.INVALID_NUMBER })
+    .int(VALIDATION_MESSAGES.PRICE.MUST_BE_WHOLE_NUMBER)
+    .min(-2, 'Floor must be >= -2')
+    .max(20, 'Floor must be <= 20')
+    .optional()
+    .nullable(),
   hasElevator: z.boolean().default(false),
   privateBathroom: z.boolean().default(false),
   kitchenEquipped: z.boolean().default(false),
@@ -94,17 +92,29 @@ const baseHousingSchema = z.object({
   doubleGlazedWindows: z.boolean().default(false),
   airConditioning: z.boolean().default(false),
 
+  // New property features
+  numberOfBathrooms: z
+    .number({ invalid_type_error: 'Enter a valid number of bathrooms' })
+    .int('Must be a whole number')
+    .min(1, 'At least 1 bathroom')
+    .max(4, 'At most 4 bathrooms')
+    .default(1),
+  newlyRenovated: z.boolean().default(false),
+  clothesDryer: z.boolean().default(false),
+
   // Step 5: Household
   householdSize: z
     .number({ invalid_type_error: VALIDATION_MESSAGES.PRICE.INVALID_NUMBER })
     .int(VALIDATION_MESSAGES.PRICE.MUST_BE_WHOLE_NUMBER)
-    .min(1, VALIDATION_MESSAGES.REQUIRED),
-  householdGender: requiredEnum(HouseholdGender),
+    .min(1, VALIDATION_MESSAGES.REQUIRED)
+    .optional()
+    .nullable(),
+  householdGender: requiredEnum(HouseholdGender).optional().nullable(),
   genderPreference: requiredEnum(GenderPreference),
   householdDescription: z.string().max(1000, 'Too long (max 1000 chars)').optional().nullable(),
 
   // Step 6: Location
-  neighborhood: optionalNonEmptyTrimmed,
+  neighborhood: z.string().min(1, VALIDATION_MESSAGES.REQUIRED),
   streetHint: optionalNonEmptyTrimmed,
   lat: z
     .number({ invalid_type_error: 'Enter a valid latitude' })
@@ -124,26 +134,6 @@ const baseHousingSchema = z.object({
   // Step 7: Notes
   notes: z.string().max(2000, 'Too long (max 2000 chars)').optional().nullable(),
 });
-
-/**
- * Validation rules for Step 1: Rental kind and unit type
- *
- * **Rules**:
- * - propertyType: always required (enforced at schema level)
- * - roomType: required only for ROOM or BED
- */
-function applyStep1Rules(val: Step1Fields, ctx: z.RefinementCtx) {
-  // roomType is required for ROOM or BED
-  if (val.unitType === HousingUnitType.ROOM || val.unitType === HousingUnitType.BED) {
-    if (!val.roomType) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['roomType'],
-        message: VALIDATION_MESSAGES.UNIT.ROOM_TYPE_REQUIRED,
-      });
-    }
-  }
-}
 
 /**
  * Validation rules for Step 2: Availability and contract
@@ -323,16 +313,6 @@ function validatePermanentPricing(val: PermanentRentalPricing, ctx: z.Refinement
       path: ['billsMonthlyEstimate'],
     });
   }
-  if (
-    validationUtils.isBillsEstimateRequired(val.billsPolicy) &&
-    val.billsMonthlyEstimate == null
-  ) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: VALIDATION_MESSAGES.BILLS.ESTIMATE_REQUIRED,
-      path: ['billsMonthlyEstimate'],
-    });
-  }
 }
 
 /**
@@ -377,7 +357,6 @@ export const housingSchema = z
         : HousingPriceType.MONTHLY,
   }))
   .superRefine((val, ctx) => {
-    applyStep1Rules(val as any, ctx);
     applyStep2Rules(val as any, ctx);
     applyPricingRules(val as any, ctx);
   });
@@ -401,14 +380,11 @@ export type HousingFormValues = z.infer<typeof housingSchema>;
  * { rentalKind: 'PERMANENT', unitType: 'ROOM', propertyType: 'TRILOCALE', roomType: 'SINGLE' }
  * ```
  */
-export const step1Schema = baseHousingSchema
-  .pick({
-    rentalKind: true,
-    unitType: true,
-    propertyType: true,
-    roomType: true,
-  })
-  .superRefine((val, ctx) => applyStep1Rules(val as Step1Fields, ctx));
+export const step1Schema = baseHousingSchema.pick({
+  rentalKind: true,
+  unitType: true,
+  propertyType: true,
+});
 
 /**
  * Step 2: Availability dates and contract details
@@ -472,15 +448,18 @@ export const step4Schema = baseHousingSchema.pick({
   heatingType: true,
   floorNumber: true,
   furnished: true,
-  hasElevator: true,
-  privateBathroom: true,
   kitchenEquipped: true,
-  wifi: true,
-  washingMachine: true,
-  dishwasher: true,
+  privateBathroom: true,
   balcony: true,
-  terrace: true,
+  hasElevator: true,
+  numberOfBathrooms: true,
+  newlyRenovated: true,
+  // Comfort & convenience
+  wifi: true,
   airConditioning: true,
+  dishwasher: true,
+  washingMachine: true,
+  clothesDryer: true,
   doubleGlazedWindows: true,
 });
 
@@ -512,7 +491,7 @@ export const step7Schema = baseHousingSchema.pick({
  * Used by React Hook Form's useWatch to track field changes per step
  */
 export const STEP_FIELDS: Record<number, (keyof HousingFormValues)[]> = {
-  1: ['rentalKind', 'unitType', 'propertyType', 'roomType'],
+  1: ['rentalKind', 'unitType', 'propertyType'],
   2: [
     'rentalKind',
     'availabilityStartDate',
@@ -543,29 +522,22 @@ export const STEP_FIELDS: Record<number, (keyof HousingFormValues)[]> = {
     'washingMachine',
     'dishwasher',
     'balcony',
-    'terrace',
     'airConditioning',
     'doubleGlazedWindows',
+    'numberOfBathrooms',
+    'newlyRenovated',
+    'clothesDryer',
   ],
   5: ['householdSize', 'householdGender', 'genderPreference', 'householdDescription'],
   6: ['neighborhood', 'streetHint', 'lat', 'lng', 'transitLines', 'shopsNearby'],
   7: ['notes'],
 };
-
 /**
  * Validates a specific step with the current form values
  *
  * @param step - Step number (1-7, step 8 is review and doesn't need validation)
  * @param values - Current form values
  * @returns true if step is valid, false otherwise
- *
- * @example
- * ```typescript
- * const isValid = validateStep(1, formValues);
- * if (isValid) {
- *   // Can proceed to next step
- * }
- * ```
  */
 export function validateStep(step: number, values: Partial<HousingFormValues>): boolean {
   try {
@@ -592,7 +564,6 @@ export function validateStep(step: number, values: Partial<HousingFormValues>): 
         step7Schema.parse(values);
         return true;
       case 8:
-        // Review step doesn't need validation
         return true;
       default:
         return false;

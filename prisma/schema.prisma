@@ -205,8 +205,9 @@ enum HousingRentalKind {
 
 enum HousingUnitType {
   WHOLE_APARTMENT
-  ROOM
-  BED
+  SINGLE_ROOM
+  DOUBLE_ROOM
+  TRIPLE_ROOM
 }
 
 enum HousingPropertyType {
@@ -217,11 +218,7 @@ enum HousingPropertyType {
   OTHER
 }
 
-enum HousingRoomType {
-  SINGLE
-  DOUBLE
-  TRIPLE
-}
+// enum HousingRoomType removed — use `unitType` to describe room vs apartment
 
 enum HousingContractType {
   NONE
@@ -548,12 +545,12 @@ model AdHousing {
   // Rental & Unit
   rentalKind             HousingRentalKind
   unitType               HousingUnitType
-  propertyType           HousingPropertyType?
+  propertyType           HousingPropertyType
 
   // Room specifics
-  roomType               HousingRoomType?
-  roomBedsTotal          Int?
-  roomBedsAvailable      Int?
+  // roomType removed; use `unitType` instead
+  // roomBedsTotal          Int?
+  // roomBedsAvailable      Int?
 
   // Availability & contract
   availabilityStartDate  DateTime
@@ -574,23 +571,28 @@ model AdHousing {
   billsNotes             String?
 
   // Property features
-  furnished              Boolean
+  furnished              Boolean?
   floorNumber            Int?
-  hasElevator            Boolean
-  privateBathroom        Boolean
-  kitchenEquipped        Boolean
-  wifi                   Boolean
-  washingMachine         Boolean
-  dishwasher             Boolean
-  balcony                Boolean
-  terrace                Boolean
+  hasElevator            Boolean?
+  privateBathroom        Boolean?
+  kitchenEquipped        Boolean?
+  wifi                   Boolean?
+  washingMachine         Boolean?
+  dishwasher             Boolean?
+  balcony                Boolean?
+  // terrace removed
   heatingType            HeatingType
-  doubleGlazedWindows    Boolean
-  airConditioning        Boolean
+  doubleGlazedWindows    Boolean?
+  airConditioning        Boolean?
+
+  // New property features
+  numberOfBathrooms      Int? @default(1)
+  newlyRenovated         Boolean?
+  clothesDryer           Boolean?
 
   // Household
-  householdSize          Int
-  householdGender        HouseholdGender
+  householdSize          Int?
+  householdGender        HouseholdGender?
   genderPreference       GenderPreference
   householdDescription   String?
 

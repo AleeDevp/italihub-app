@@ -11,7 +11,7 @@ import {
   HousingContractType,
   HousingPropertyType,
   HousingRentalKind,
-  HousingRoomType,
+  // HousingRoomType removed
   HousingUnitType,
 } from '@/generated/prisma';
 
@@ -22,7 +22,7 @@ export interface BaseRentalFields {
   rentalKind: HousingRentalKind;
   unitType: HousingUnitType;
   propertyType: HousingPropertyType; // ALWAYS REQUIRED - never null
-  roomType: HousingRoomType | null;
+  // roomType removed; unitType encodes room sizing
   availabilityStartDate: Date | null;
 }
 
@@ -95,7 +95,7 @@ export interface Step1Fields {
   rentalKind: HousingRentalKind;
   unitType: HousingUnitType;
   propertyType: HousingPropertyType; // ALWAYS REQUIRED - never null
-  roomType: HousingRoomType | null | undefined;
+  // roomType removed
 }
 
 /**
