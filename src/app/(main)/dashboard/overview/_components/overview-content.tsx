@@ -1,8 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { listRecentUserActivity } from '@/data/activity/activity';
-import { getUserAdStats } from '@/data/ads/ads';
-import { getOnlineAdsWithCounters } from '@/data/metrics/metrics';
+import { getOverviewSnapshot } from '@/data/dashboard/overview';
 import { Activity, BarChart3, Eye, MessageCircle, TrendingUp } from 'lucide-react';
 
 interface OverviewContentProps {
@@ -10,11 +8,7 @@ interface OverviewContentProps {
 }
 
 export async function OverviewContent({ userId }: OverviewContentProps) {
-  const [adStats, topAds, recentActivity] = await Promise.all([
-    getUserAdStats(userId),
-    getOnlineAdsWithCounters(userId),
-    listRecentUserActivity(userId, 10),
-  ]);
+  const { adStats, topAds, recentActivity } = await getOverviewSnapshot(userId);
 
   const totalAds = adStats.online + adStats.pending + adStats.rejected + adStats.expired;
 

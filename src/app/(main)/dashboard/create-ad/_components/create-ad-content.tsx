@@ -1,6 +1,8 @@
 'use client';
 
 import { Separator } from '@/components/ui/separator';
+import { AD_CATEGORY_CONFIG, DEFAULT_AD_CATEGORY } from '@/constants/ad-categories';
+import type { AdCategory } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
@@ -10,43 +12,18 @@ import { MarketCreateCard } from './market-create-card';
 import { ServicesCreateCard } from './services-create-card';
 import { TransportationCreateCard } from './transportation-create-card';
 
-export type AdCategory = 'housing' | 'transportation' | 'market' | 'services';
-
-const categories = [
-  {
-    id: 'housing' as AdCategory,
-    name: 'Housing',
-    imageSrc: '/ads/housing.png',
-  },
-  {
-    id: 'transportation' as AdCategory,
-    name: 'Transportation',
-    imageSrc: '/ads/transportation.png',
-  },
-  {
-    id: 'market' as AdCategory,
-    name: 'Market',
-    imageSrc: '/ads/market.png',
-  },
-  {
-    id: 'services' as AdCategory,
-    name: 'Services',
-    imageSrc: '/ads/services.png',
-  },
-];
-
 export function CreateAdContent() {
-  const [selectedCategory, setSelectedCategory] = useState<AdCategory>('housing');
+  const [selectedCategory, setSelectedCategory] = useState<AdCategory>(DEFAULT_AD_CATEGORY);
 
   const renderForm = () => {
     switch (selectedCategory) {
-      case 'housing':
+      case 'HOUSING':
         return <HousingCreateCard />;
-      case 'transportation':
+      case 'TRANSPORTATION':
         return <TransportationCreateCard />;
-      case 'market':
+      case 'MARKETPLACE':
         return <MarketCreateCard />;
-      case 'services':
+      case 'SERVICES':
         return <ServicesCreateCard />;
     }
   };
@@ -65,7 +42,7 @@ export function CreateAdContent() {
       <div className="flex justify-center w-full mt-16">
         <div className="w-full mx-auto h-[78px] md:h-[92px] lg:h-[105px] ">
           <div className="grid grid-cols-4 h-full gap-1 md:gap-3 lg:gap-6 items-stretch">
-            {categories.map((category) => {
+            {AD_CATEGORY_CONFIG.map((category) => {
               const isActive = selectedCategory === category.id;
 
               return (
@@ -73,7 +50,7 @@ export function CreateAdContent() {
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
                   className={cn(
-                    'relative',
+                    'relative ',
                     'w-full h-full',
                     'rounded-2xl md:rounded-3xl lg:rounded-4xl  transition-all duration-200',
                     'border border-dashed border-muted',
@@ -85,7 +62,7 @@ export function CreateAdContent() {
                   {/* Content */}
                   <div className="flex flex-col h-full items-center justify-center py-3.5">
                     {/* Icon - No circle background, just the icon */}
-                    <div className="">
+                    <div>
                       <Image
                         src={category.imageSrc}
                         alt={category.name}

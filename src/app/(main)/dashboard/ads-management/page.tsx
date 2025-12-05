@@ -9,7 +9,6 @@ export default async function AdsManagementPage() {
   return (
     <div className="w-full max-w-7xl mx-auto">
       <PageLabel icon={adsRoute.icon} title={adsRoute.name} description={adsRoute.description} />
-
       <Suspense fallback={<AdListSkeleton />}>
         <AdsManagementContent />
       </Suspense>

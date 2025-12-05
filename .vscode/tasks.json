@@ -246,6 +246,15 @@
 			"args": [],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "Typecheck Quick",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
 		}
 	]
 }

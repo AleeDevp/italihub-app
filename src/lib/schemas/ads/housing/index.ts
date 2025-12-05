@@ -44,13 +44,7 @@ const baseHousingSchema = z.object({
   // roomType removed; unitType encodes room sizing
 
   // Step 2: Availability & contract
-  availabilityStartDate: z
-    .date({
-      required_error: VALIDATION_MESSAGES.DATE.START_REQUIRED,
-      invalid_type_error: VALIDATION_MESSAGES.DATE.START_REQUIRED,
-    })
-    .nullable()
-    .refine((d): d is Date => d != null, { message: VALIDATION_MESSAGES.DATE.START_REQUIRED }),
+  availabilityStartDate: z.date().optional().nullable(),
   availabilityEndDate: z.date().optional().nullable(),
   contractType: z
     .nativeEnum(HousingContractType, { required_error: VALIDATION_MESSAGES.CONTRACT.TYPE_REQUIRED })
@@ -77,9 +71,8 @@ const baseHousingSchema = z.object({
     .number({ invalid_type_error: VALIDATION_MESSAGES.PRICE.INVALID_NUMBER })
     .int(VALIDATION_MESSAGES.PRICE.MUST_BE_WHOLE_NUMBER)
     .min(-2, 'Floor must be >= -2')
-    .max(20, 'Floor must be <= 20')
-    .optional()
-    .nullable(),
+    .max(15, 'Floor must be <= 15')
+    .default(0),
   hasElevator: z.boolean().default(false),
   privateBathroom: z.boolean().default(false),
   kitchenEquipped: z.boolean().default(false),
@@ -95,7 +88,7 @@ const baseHousingSchema = z.object({
   // New property features
   numberOfBathrooms: z
     .number({ invalid_type_error: 'Enter a valid number of bathrooms' })
-    .int('Must be a whole number')
+    .int(VALIDATION_MESSAGES.PRICE.MUST_BE_WHOLE_NUMBER)
     .min(1, 'At least 1 bathroom')
     .max(4, 'At most 4 bathrooms')
     .default(1),
@@ -106,9 +99,7 @@ const baseHousingSchema = z.object({
   householdSize: z
     .number({ invalid_type_error: VALIDATION_MESSAGES.PRICE.INVALID_NUMBER })
     .int(VALIDATION_MESSAGES.PRICE.MUST_BE_WHOLE_NUMBER)
-    .min(1, VALIDATION_MESSAGES.REQUIRED)
-    .optional()
-    .nullable(),
+    .min(1, VALIDATION_MESSAGES.REQUIRED),
   householdGender: requiredEnum(HouseholdGender).optional().nullable(),
   genderPreference: requiredEnum(GenderPreference),
   householdDescription: z.string().max(1000, 'Too long (max 1000 chars)').optional().nullable(),
@@ -128,10 +119,18 @@ const baseHousingSchema = z.object({
     .max(180, 'Longitude must be <= 180')
     .optional()
     .nullable(),
-  transitLines: z.array(z.string().trim().min(1, 'Line cannot be empty')).default([]),
-  shopsNearby: z.array(z.string().trim().min(1, 'Shop name cannot be empty')).default([]),
+  transitLines: z.array(z.string().trim().min(1, 'Line cannot be empty')).optional().default([]),
+  shopsNearby: z
+    .array(z.string().trim().min(1, 'Shop name cannot be empty'))
+    .optional()
+    .default([]),
 
-  // Step 7: Notes
+  // Step 7: Images (new) + Notes (still available but not step-gated)
+  images: z
+    .array(z.string().min(1, 'Invalid image key'))
+    .max(8, 'You can upload up to 8 images')
+    .default([]),
+  coverImageStorageKey: z.string(),
   notes: z.string().max(2000, 'Too long (max 2000 chars)').optional().nullable(),
 });
 
@@ -139,15 +138,26 @@ const baseHousingSchema = z.object({
  * Validation rules for Step 2: Availability and contract
  *
  * **For TEMPORARY rentals:**
+ * - Start date required
  * - End date required
  * - End date must be after start date
  *
  * **For PERMANENT rentals:**
+ * - Start date required
  * - Contract type required
  * - Residenza availability required
  * - End date must be null
  */
 function applyStep2Rules(val: Step2Fields, ctx: z.RefinementCtx) {
+  // Start date is always required
+  if (!val.availabilityStartDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: VALIDATION_MESSAGES.DATE.START_REQUIRED,
+      path: ['availabilityStartDate'],
+    });
+  }
+
   if (val.rentalKind === HousingRentalKind.TEMPORARY) {
     // Temporary requires end date
     if (!val.availabilityEndDate) {
@@ -480,11 +490,64 @@ export const step6Schema = baseHousingSchema.pick({
   transitLines: true,
   shopsNearby: true,
 });
+// Make lat/lng/neighborhood required for step 6 (location selection)
+step6Schema.superRefine((val, ctx) => {
+  // neighborhood must be a non-empty string
+  if (val.neighborhood == null || String(val.neighborhood).trim().length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Select a location',
+      path: ['neighborhood'],
+    });
+  }
 
-/** Step 7: Additional notes */
-export const step7Schema = baseHousingSchema.pick({
-  notes: true,
+  // lat must be present
+  if (val.lat == null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Select a location',
+      path: ['lat'],
+    });
+  }
+
+  // lng must be present
+  if (val.lng == null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Select a location',
+      path: ['lng'],
+    });
+  }
 });
+
+/** Step 7: Images (requires at least 1 image and a valid cover among them) */
+export const step7Schema = baseHousingSchema
+  .pick({
+    images: true,
+    coverImageStorageKey: true,
+  })
+  .superRefine((val, ctx) => {
+    const images = val.images || [];
+    // At least 1 image required
+    if (!Array.isArray(images) || images.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Please upload at least one image',
+        path: ['images'],
+      });
+    }
+
+    // Cover must be one of the images when images exist
+    if (Array.isArray(images) && images.length > 0) {
+      if (!val.coverImageStorageKey || !images.includes(val.coverImageStorageKey)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Select a cover image',
+          path: ['coverImageStorageKey'],
+        });
+      }
+    }
+  });
 
 /**
  * Maps each step to the form fields it uses for watching changes
@@ -530,7 +593,7 @@ export const STEP_FIELDS: Record<number, (keyof HousingFormValues)[]> = {
   ],
   5: ['householdSize', 'householdGender', 'genderPreference', 'householdDescription'],
   6: ['neighborhood', 'streetHint', 'lat', 'lng', 'transitLines', 'shopsNearby'],
-  7: ['notes'],
+  7: ['images', 'coverImageStorageKey'],
 };
 /**
  * Validates a specific step with the current form values

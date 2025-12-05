@@ -1,37 +1,43 @@
 'use client';
 
+import { HousingDialog } from '@/components/ad-forms/housing/housing-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FaHouseChimney } from 'react-icons/fa6';
-import { HousingCreateDialog } from './housing-create-dialog';
+import { AD_CATEGORY_BY_ID } from '@/constants/ad-categories';
+import { cn } from '@/lib/utils';
 
 export function HousingCreateCard() {
+  const category = AD_CATEGORY_BY_ID.HOUSING;
+
+  if (!category) {
+    return null;
+  }
+
+  const Icon = category.icon;
+
   return (
-    <Card className="w-full ad-housing-bg">
+    <Card className={cn('w-full', category.bgPrimaryColor)}>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl ad-housing shadow-lg">
-            <FaHouseChimney className="w-6 h-6 text-white" />
+          <div className={cn('p-3 rounded-xl shadow-lg', category.bgSecondaryColor)}>
+            <Icon className="w-6 h-6 text-white" />
           </div>
           <div>
-            <CardTitle className="text-2xl">Housing Advertisement</CardTitle>
-            <CardDescription className="text-base">
-              Post your property listing for rent or sale
-            </CardDescription>
+            <CardTitle className="text-2xl">{category.cardTitle}</CardTitle>
+            <CardDescription className="text-base">{category.cardDescription}</CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="shadow-sm rounded-3xl py-6 space-y-6 mx-2 bg-card">
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold">Before you create a housing ad</h3>
+          <h3 className="text-lg font-semibold">{category.guidelinesTitle}</h3>
           <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-            <li>Only post properties you own or have permission to list.</li>
-            <li>Provide accurate details about price, location, and condition.</li>
-            <li>Photos must be clear and not contain watermarks or sensitive info.</li>
-            <li>Avoid duplicate listings or misleading information.</li>
+            {category.guidelines.map((guideline) => (
+              <li key={guideline}>{guideline}</li>
+            ))}
           </ul>
         </div>
         <div className="flex justify-end">
-          <HousingCreateDialog />
+          <HousingDialog />
         </div>
       </CardContent>
     </Card>

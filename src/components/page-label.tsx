@@ -25,8 +25,9 @@ export function PageLabel({
     <div
       className={cn(
         className,
+        'mx-4 md:mx-0',
         isVertical
-          ? 'flex flex-col items-center justify-center  gap-5'
+          ? 'flex flex-col items-center justify-center gap-5'
           : ' flex items-center my-8 gap-5'
       )}
     >

@@ -118,6 +118,7 @@ Each image type has security-focused configurations with MIME allowlists:
 | `icon`         | Icons/logos             | 1MB      | `image/png`, `image/svg+xml`, `image/webp`                          | 64×64             | `icons/`        |
 | `banner`       | Banner images           | 12MB     | `image/jpeg`, `image/png`, `image/webp`                             | 1200×300 (4:1)    | `banners/`      |
 | `verification` | **Verification images** | 8MB      | `image/jpeg`, `image/png`, `image/webp`, `image/avif`               | Original/Variable | `verification/` |
+| `ad-housing`   | Housing listing images  | 15MB     | `image/jpeg`, `image/png`, `image/webp`, `image/avif`               | Variable          | `ads/housing/`  |
 
 ### Verification Images (Image-Only Support)
 

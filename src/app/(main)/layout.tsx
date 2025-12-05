@@ -6,7 +6,7 @@ export default async function MainLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession();
+  await getServerSession();
 
   return (
     <div>

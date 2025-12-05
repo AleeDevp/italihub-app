@@ -25,7 +25,8 @@ export type ImageType =
   | 'background' // Background images - large, optimized
   | 'icon' // Icons and logos - small, crisp
   | 'banner' // Banner images - wide, medium quality
-  | 'verification'; // User verification documents/images
+  | 'verification' // User verification documents/images
+  | 'ad-housing'; // Housing ad listing images (multiple per ad)
 
 /**
  * Image configuration for different types
@@ -113,6 +114,15 @@ export const IMAGE_TYPE_CONFIGS: Record<ImageType, ImageTypeConfig> = {
     // No forced dimensions; keep originals to preserve text clarity
     quality: 90,
     folder: 'verification',
+  },
+  'ad-housing': {
+    // Housing listing photos: allow relatively large high-quality images
+    maxSizeBytes: 15 * 1024 * 1024, // 15MB
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const,
+    // No fixed dimensions; keep originals, let UI request sizes as needed
+    quality: 90,
+    // Cloudinary folder for housing ads
+    folder: 'ads/housing',
   },
 };
 

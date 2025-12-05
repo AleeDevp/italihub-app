@@ -13,6 +13,7 @@ type CounterProps = HTMLMotionProps<'div'> & {
   slidingNumberProps?: Omit<SlidingNumberProps, 'number'>;
   buttonProps?: Omit<React.ComponentProps<typeof Button>, 'onClick'>;
   transition?: Transition;
+  error?: boolean; // when true, shows error state with red ring
 };
 
 function Counter({
@@ -22,6 +23,7 @@ function Counter({
   slidingNumberProps,
   buttonProps,
   transition = { type: 'spring', bounce: 0, stiffness: 300, damping: 30 },
+  error = false,
   ...props
 }: CounterProps) {
   return (
@@ -30,7 +32,8 @@ function Counter({
       layout
       transition={transition}
       className={cn(
-        'flex items-center gap-x-2 p-1 rounded-xl bg-neutral-100 dark:bg-neutral-800',
+        'flex items-center gap-x-2 p-1 rounded-xl bg-neutral-100 dark:bg-neutral-800 transition-all',
+        error && 'ring-[3px] ring-destructive/20 border border-destructive',
         className
       )}
       {...props}

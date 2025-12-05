@@ -433,4 +433,30 @@ export class VerificationImageService extends ImageService {
   }
 }
 
+/**
+ * Housing Ad Image Service
+ * - Multiple listing images per ad (up to 8 at UI level)
+ * - Uses 'ad-housing' image type configuration
+ */
+export class HousingAdImageService extends ImageService {
+  static async upload(file: File, userId: string): Promise<ServiceResult<ImageUploadResult>> {
+    return ImageService.uploadImage(file, userId, 'ad-housing');
+  }
+
+  static async uploadMany(
+    files: File[],
+    userId: string
+  ): Promise<ServiceResult<ImageUploadResult[]>> {
+    return ImageService.batchUploadImages(files, userId, 'ad-housing');
+  }
+
+  static async replace(
+    newFile: File,
+    oldStorageKey: string | null,
+    userId: string
+  ): Promise<ServiceResult<ImageUploadResult>> {
+    return ImageService.replaceImage(newFile, oldStorageKey, userId, 'ad-housing');
+  }
+}
+
 // All services are already exported above

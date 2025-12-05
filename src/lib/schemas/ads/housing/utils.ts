@@ -5,12 +5,13 @@
 import { z } from 'zod';
 
 /**
- * Optional, trimmed string that treats empty strings as undefined
+ * Optional, trimmed string that treats empty strings and null as undefined
  */
-export const optionalNonEmptyTrimmed = z.preprocess(
-  (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
-  z.string().trim().optional()
-);
+export const optionalNonEmptyTrimmed = z.preprocess((v) => {
+  if (v === null || v === undefined) return undefined;
+  if (typeof v === 'string' && v.trim() === '') return undefined;
+  return v;
+}, z.string().trim().optional());
 
 /**
  * Standard money validation (non-negative)

@@ -56,11 +56,8 @@ export function BottomNavigationBar() {
   if (!isMobile) return null;
 
   return (
-    <nav
-      aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-50  flex items-center justify-center pb-[max(env(safe-area-inset-bottom),0px)]"
-    >
-      <div className="mx-auto w-dvw bg-white/60 backdrop-blur-md ring-1 ring-black/5">
+    <nav aria-label="Primary" className="fixed bottom-0 z-50">
+      <div className="mx-auto w-dvw bg-white/90 backdrop-blur-md ring-1 ring-black/5">
         <ul className="grid grid-cols-4">
           {items.map(({ key, href, label, Icon, isActive }) => {
             const active = isActive(pathname || '/');

@@ -1,0 +1,91 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { AD_CATEGORY_BY_ID } from '@/constants/ad-categories';
+import { useConfirmBeforeClose } from '@/hooks/use-confirm-before-close';
+import { cn } from '@/lib/utils';
+
+export function ServicesDialog() {
+  const { open, onOpenChange, markDirty, handleCancel, confirmDialog } = useConfirmBeforeClose();
+  const servicesCategory = AD_CATEGORY_BY_ID.SERVICES;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button
+          size="lg"
+          className={cn(servicesCategory?.bgSecondaryColor, 'hover:shadow-lg transition-all')}
+        >
+          Start creating services ad
+        </Button>
+      </DialogTrigger>
+      <DialogContent
+        className="sm:max-w-2xl"
+        disableOutsideClose
+        disableEscapeClose
+        showCloseButton={false}
+      >
+        <DialogHeader>
+          <DialogTitle>Create services ad</DialogTitle>
+          <DialogDescription>Fill out the details below to publish your listing.</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4" onChange={markDirty}>
+          <div className="space-y-2">
+            <Label htmlFor="services-title">Service Title *</Label>
+            <Input id="services-title" placeholder="e.g., Professional Web Development Services" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="services-description">Description *</Label>
+            <Textarea
+              id="services-description"
+              placeholder="Describe your services in detail..."
+              className="min-h-[120px] resize-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="services-category">Service Category</Label>
+              <Input id="services-category" placeholder="e.g., IT, Cleaning, Tutoring" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="services-price">Price (€/hour)</Label>
+              <Input id="services-price" type="number" placeholder="e.g., 45" />
+            </div>
+          </div>
+
+          {/* Placeholder for additional form fields */}
+          <div className="pt-4 text-center text-sm text-muted-foreground">
+            <p>Additional fields will be implemented here</p>
+            <p className="text-xs mt-1">(Experience, Availability, Location, etc.)</p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" size="lg" onClick={handleCancel}>
+            Cancel
+          </Button>
+          <Button size="lg" className="ad-services hover:shadow-lg transition-all">
+            Publish Ad
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+      {confirmDialog}
+    </Dialog>
+  );
+}

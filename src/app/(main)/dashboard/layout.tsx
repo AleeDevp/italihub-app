@@ -19,13 +19,23 @@ export default async function DashboardLayout({
   const user = await requireUser();
 
   return (
-    <div className="star-pattern">
+    <div
+      className=""
+      style={{
+        backgroundImage: `
+        linear-gradient(to right, #e5e7eb60 1px, transparent 1px),
+        linear-gradient(to bottom, #e5e7eb60 1px, transparent 1px)
+      `,
+        backgroundSize: '20px 20px',
+      }}
+    >
+      {/* className="star-pattern" */}
       {/* <SidebarProvider defaultOpen={defaultOpen}> */}
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
           <header className="sticky w-full flex flex-col top-0 px-0 md:px-1 z-50">
-            <div className="z-40 w-full mx-auto py-1.5 px-4 rounded-br-sm rounded-bl-sm bg-background shadow-sm shrink-0 gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-fit">
+            <div className="z-40 w-full mx-auto py-1.5 px-4 rounded-none md:rounded-b-sm bg-background shadow-sm shrink-0 gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-fit">
               <div className="flex justify-between md:pr-5">
                 <div className="flex items-center gap-2">
                   <SidebarTrigger />
@@ -33,7 +43,6 @@ export default async function DashboardLayout({
                     orientation="vertical"
                     className="mr-2 data-[orientation=vertical]:h-4"
                   />
-
                   <CurrentRouteTitle />
                 </div>
                 <div className="flex items-center gap-2">
@@ -43,7 +52,7 @@ export default async function DashboardLayout({
               </div>
             </div>
           </header>
-          <main className="py-4 px-3 md:px-8 mb-20 md:mb-0">{children}</main>
+          <main className="md:px-8 mb-20 md:mb-0">{children}</main>
         </SidebarInset>
       </SidebarProvider>
     </div>

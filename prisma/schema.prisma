@@ -580,12 +580,9 @@ model AdHousing {
   washingMachine         Boolean?
   dishwasher             Boolean?
   balcony                Boolean?
-  // terrace removed
   heatingType            HeatingType
   doubleGlazedWindows    Boolean?
   airConditioning        Boolean?
-
-  // New property features
   numberOfBathrooms      Int? @default(1)
   newlyRenovated         Boolean?
   clothesDryer           Boolean?
