@@ -27,6 +27,7 @@ import { FaRoad } from 'react-icons/fa';
 import { FaClock, FaLocationDot, FaPeoplePulling, FaPeopleRoof } from 'react-icons/fa6';
 import { MdLocationCity, MdStickyNote2 } from 'react-icons/md';
 import { RiTelegram2Fill } from 'react-icons/ri';
+import { Separator } from '../ui/separator';
 import { LocationMap } from './location-map';
 import { DEFAULT_AD_DETAIL_VARIANT, type AdDetailVariant } from './types';
 
@@ -120,7 +121,7 @@ export function HousingAdDetails({
     }
     return {
       main: `€${Number(housing.priceAmount)}`,
-      sub: isTemporary ? '/ night' : '/ month',
+      sub: isTemporary ? 'per night' : 'per month',
     };
   };
 
@@ -493,85 +494,156 @@ export function HousingAdDetails({
               </div>
             </Section>
 
-            {/* Price Section */}
-            <Section title="Price" icon={PriceIcon}>
-              <div className="space-y-4">
-                {/* Main Price Display */}
-                <div className="flex flex-col items-baseline gap-1 ">
-                  <div className="flex justify-between items-center pb-5 border-b w-full">
-                    <span className="text-sm text-gray-600 font-medium">Price</span>
-                    <div>
-                      <span className="text-3xl font-bold text-gray-900">{priceDisplay.main}</span>
+            {/* Price Section - Mobile Only */}
+            <div className="md:hidden space-y-4 bg-white rounded-3xl p-4 border">
+              {/* Card Header */}
+              <div className="flex items-center gap-2.5 border-b pb-2">
+                <PriceIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
+                <h3 className="text-md sm:text-lg font-semibold text-gray-900">Pricing Details</h3>
+              </div>
+
+              <div className="px-2 space-y-5">
+                {/* Price Section - Hero Style */}
+                <div className="relative bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 rounded-2xl p-5 shadow-lg shadow-blue-500/20 overflow-hidden">
+                  {/* Decorative elements */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+                  <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+
+                  <div className="relative flex justify-between items-center">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-blue-100 text-xs font-semibold uppercase tracking-wider">
+                        Monthly Rent
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="p-1.5 rounded-lg bg-white/20 backdrop-blur-sm">
+                          <PriceIcon className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="text-white/80 text-sm font-medium">Price</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-4xl font-extrabold text-white drop-shadow-sm">
+                        {priceDisplay.main}
+                      </span>
                       {!priceNegotiable && (
-                        <span className="text-gray-600 text-sm pl-1">{priceDisplay.sub}</span>
+                        <p className="text-blue-100 text-sm font-medium">{priceDisplay.sub}</p>
                       )}
                       {priceNegotiable && (
-                        <p className="mt-1 text-right text-xs text-gray-600">{priceDisplay.sub}</p>
+                        <p className="text-blue-100 text-xs font-medium">{priceDisplay.sub}</p>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Additional Permanent Rental Details */}
                 {isPermanent && (
-                  <div className="space-y-3">
-                    {/* Deposit Amount */}
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="text-sm text-gray-600 font-medium">Deposit</span>
-                      <span className="text-sm text-gray-900 ">
-                        {housing.depositAmount
-                          ? `€${Number(housing.depositAmount)}`
-                          : 'Not specified'}
+                  <div className="space-y-4">
+                    {/* Contract Section */}
+                    <div className="flex justify-between items-center px-1">
+                      <span className="text-sm text-gray-600 font-medium">Contract</span>
+                      <span
+                        className={cn(
+                          'px-3 py-1.5 rounded-full text-xs font-bold shadow-sm',
+                          housing.contractType === 'LONG_TERM' &&
+                            'bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border border-emerald-200',
+                          housing.contractType === 'SHORT_TERM' &&
+                            'bg-gradient-to-r from-orange-100 to-orange-50 text-orange-700 border border-orange-200',
+                          (!housing.contractType || housing.contractType === 'NONE') &&
+                            'bg-gradient-to-r from-red-100 to-red-50 text-red-700 border border-red-200'
+                        )}
+                      >
+                        {housing.contractType === 'LONG_TERM'
+                          ? '✓ Long Term'
+                          : housing.contractType === 'SHORT_TERM'
+                            ? 'Short Term'
+                            : '✕ No contract'}
                       </span>
                     </div>
 
-                    {/* Agency Fee Amount */}
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="text-sm text-gray-600 font-medium">Agency Fee</span>
-                      <span className="text-sm text-gray-900 ">
-                        {housing.agencyFeeAmount
-                          ? `€${Number(housing.agencyFeeAmount)}`
-                          : 'No agency fee'}
-                      </span>
+                    <Separator className="bg-gray-100" />
+
+                    {/* Deposit & Agency Fee Section */}
+                    <div className="bg-gray-50/70 rounded-xl p-3 space-y-3 border border-gray-100">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                          <span className="text-sm text-gray-600">Deposit</span>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900">
+                          {housing.depositAmount ? `€${Number(housing.depositAmount)}` : '—'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                          <span className="text-sm text-gray-600">Agency Fee</span>
+                        </div>
+                        {housing.agencyFeeAmount ? (
+                          <span className="text-sm font-semibold text-gray-900">
+                            €{Number(housing.agencyFeeAmount)}
+                          </span>
+                        ) : (
+                          <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                            No fee
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Bills Policy */}
+                    {/* Bills Section */}
                     {housing.billsPolicy && (
-                      <div className="flex justify-between items-center py-2 border-b">
-                        <span className="text-sm text-gray-600 font-medium">Bills policy</span>
-                        <span className="text-sm text-gray-900 ">
-                          {formatEnumLabel(housing.billsPolicy)}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Bills Monthly Estimate */}
-                    {housing.billsMonthlyEstimate && (
-                      <div className="flex justify-between items-center py-2 border-b">
-                        <span className="text-sm text-gray-600 font-medium">
-                          Estimated Monthly Bills
-                        </span>
-                        <span className="text-sm text-gray-900 ">
-                          €{Number(housing.billsMonthlyEstimate)}
-                        </span>
-                      </div>
+                      <>
+                        <Separator className="bg-gray-100" />
+                        <div className="space-y-3 px-1">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 font-medium">Bills</span>
+                            <span
+                              className={cn(
+                                'px-3 py-1 rounded-full text-xs font-bold shadow-sm',
+                                housing.billsPolicy === 'INCLUDED' &&
+                                  'bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border border-emerald-200',
+                                housing.billsPolicy === 'EXCLUDED' &&
+                                  'bg-gradient-to-r from-red-100 to-red-50 text-red-700 border border-red-200',
+                                housing.billsPolicy === 'PARTIAL' &&
+                                  'bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200'
+                              )}
+                            >
+                              {housing.billsPolicy === 'INCLUDED' && '✓ '}
+                              {housing.billsPolicy === 'EXCLUDED' && '✕ '}
+                              {formatEnumLabel(housing.billsPolicy)}
+                            </span>
+                          </div>
+                          {(housing.billsPolicy === 'EXCLUDED' ||
+                            housing.billsPolicy === 'PARTIAL') &&
+                            housing.billsMonthlyEstimate && (
+                              <div className="flex justify-between items-center bg-gray-50/70 rounded-lg p-2 border border-gray-100">
+                                <span className="text-xs text-gray-500">Est. Monthly</span>
+                                <span className="text-sm font-semibold text-gray-900">
+                                  €{Number(housing.billsMonthlyEstimate)}
+                                </span>
+                              </div>
+                            )}
+                        </div>
+                      </>
                     )}
 
                     {/* Bills Note */}
                     {housing.billsNotes && (
-                      <div className="py-2">
-                        <p className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-2">
-                          Bills Note
-                        </p>
-                        <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 border">
-                          {housing.billsNotes}
-                        </p>
-                      </div>
+                      <>
+                        <Separator className="bg-gray-100" />
+                        <div className="px-1">
+                          <p className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-2">
+                            Bills Note
+                          </p>
+                          <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 border">
+                            {housing.billsNotes}
+                          </p>
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
               </div>
-            </Section>
+            </div>
 
             {/* Household Section */}
             <Section title="Household" icon={HouseholdIcon}>
@@ -710,85 +782,176 @@ export function HousingAdDetails({
           {/* Right Column: Pricing & Availability Card (Desktop: Sticky, Mobile: Hidden) */}
           <div className="hidden md:block md:col-span-1">
             <div className="sticky top-30 space-y-4">
-              <div className="border bg-card rounded-3xl shadow-none overflow-hidden">
-                <div className="p-6 space-y-8">
-                  {/* Price Section */}
-                  <div className="pb-4 border-b">
-                    <div className="flex flex-col items-baseline gap-2 pb-3">
-                      <div className=" ">
-                        <span className="text-3xl font-bold text-gray-900">
+              <div className="border bg-gradient-to-b from-white to-gray-50/50 rounded-3xl shadow-lg overflow-hidden">
+                {/* Card Header */}
+                <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-4">
+                  <div className="flex items-center gap-2.5">
+                    <PriceIcon className="w-5 h-5 text-white" />
+                    <h3 className="text-white font-semibold text-lg">Pricing Details</h3>
+                  </div>
+                </div>
+
+                <div className="p-5 space-y-5">
+                  {/* Price Section - Hero Style */}
+                  <div className="relative bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 rounded-2xl p-5 shadow-lg shadow-blue-500/20 overflow-hidden">
+                    {/* Decorative elements */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+                    <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+
+                    <div className="relative flex justify-between items-center">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-blue-100 text-xs font-semibold uppercase tracking-wider">
+                          Monthly Rent
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <div className="p-1.5 rounded-lg bg-white/20 backdrop-blur-sm">
+                            <PriceIcon className="w-4 h-4 text-white" />
+                          </div>
+                          <span className="text-white/80 text-sm font-medium">Price</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-4xl font-extrabold text-white drop-shadow-sm">
                           {priceDisplay.main}
                         </span>
                         {!priceNegotiable && (
-                          <span className="text-gray-600 text-sm pl-1">{priceDisplay.sub}</span>
+                          <p className="text-blue-100 text-sm font-medium">{priceDisplay.sub}</p>
+                        )}
+                        {priceNegotiable && (
+                          <p className="text-blue-100 text-xs font-medium">{priceDisplay.sub}</p>
                         )}
                       </div>
-                      {priceNegotiable && (
-                        <p className="text-xs text-gray-600 pb-3">{priceDisplay.sub}</p>
-                      )}
                     </div>
-                    {isPermanent && (
-                      <div className="space-y-1 my-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Contract</span>
-                          <span className="text-gray-900 font-semibold text-xs">
-                            {formatEnumLabel(housing.contractType)}
-                          </span>
-                        </div>
-
-                        {housing.billsPolicy && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Bills</span>
-                            <span className="text-gray-900 font-semibold text-xs">
-                              {formatEnumLabel(housing.billsPolicy)}
-                            </span>
-                          </div>
-                        )}
-                        {housing.depositAmount && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Deposit</span>
-                            <span className="text-gray-900 font-semibold text-xs">
-                              €{Number(housing.depositAmount)}
-                            </span>
-                          </div>
-                        )}
-                        {housing.agencyFeeAmount && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Agency Fee</span>
-                            <span className="text-gray-900 font-semibold text-xs">
-                              €{Number(housing.agencyFeeAmount)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
 
+                  {isPermanent && (
+                    <div className="space-y-4">
+                      {/* Contract Section */}
+                      <div className="flex justify-between items-center px-1">
+                        <span className="text-sm text-gray-600 font-medium">Contract</span>
+                        <span
+                          className={cn(
+                            'px-3 py-1.5 rounded-full text-xs font-bold shadow-sm',
+                            housing.contractType === 'LONG_TERM' &&
+                              'bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border border-emerald-200',
+                            housing.contractType === 'SHORT_TERM' &&
+                              'bg-gradient-to-r from-orange-100 to-orange-50 text-orange-700 border border-orange-200',
+                            (!housing.contractType || housing.contractType === 'NONE') &&
+                              'bg-gradient-to-r from-red-100 to-red-50 text-red-700 border border-red-200'
+                          )}
+                        >
+                          {housing.contractType === 'LONG_TERM'
+                            ? '✓ Long Term'
+                            : housing.contractType === 'SHORT_TERM'
+                              ? 'Short Term'
+                              : '✕ No contract'}
+                        </span>
+                      </div>
+
+                      <Separator className="bg-gray-100" />
+
+                      {/* Deposit & Agency Fee Section */}
+                      <div className="bg-gray-50/70 rounded-xl p-3 space-y-3 border border-gray-100">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                            <span className="text-sm text-gray-600">Deposit</span>
+                          </div>
+                          <span className="text-sm font-semibold text-gray-900">
+                            {housing.depositAmount ? `€${Number(housing.depositAmount)}` : '—'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                            <span className="text-sm text-gray-600">Agency Fee</span>
+                          </div>
+                          {housing.agencyFeeAmount ? (
+                            <span className="text-sm font-semibold text-gray-900">
+                              €{Number(housing.agencyFeeAmount)}
+                            </span>
+                          ) : (
+                            <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                              No fee
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bills Section */}
+                      {housing.billsPolicy && (
+                        <>
+                          <Separator className="bg-gray-100" />
+                          <div className="space-y-3 px-1">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600 font-medium">Bills</span>
+                              <span
+                                className={cn(
+                                  'px-3 py-1 rounded-full text-xs font-bold shadow-sm',
+                                  housing.billsPolicy === 'INCLUDED' &&
+                                    'bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border border-emerald-200',
+                                  housing.billsPolicy === 'EXCLUDED' &&
+                                    'bg-gradient-to-r from-red-100 to-red-50 text-red-700 border border-red-200',
+                                  housing.billsPolicy === 'PARTIAL' &&
+                                    'bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200'
+                                )}
+                              >
+                                {housing.billsPolicy === 'INCLUDED' && '✓ '}
+                                {housing.billsPolicy === 'EXCLUDED' && '✕ '}
+                                {formatEnumLabel(housing.billsPolicy)}
+                              </span>
+                            </div>
+                            {(housing.billsPolicy === 'EXCLUDED' ||
+                              housing.billsPolicy === 'PARTIAL') &&
+                              housing.billsMonthlyEstimate && (
+                                <div className="flex justify-between items-center bg-gray-50/70 rounded-lg p-2 border border-gray-100">
+                                  <span className="text-xs text-gray-500">Est. Monthly</span>
+                                  <span className="text-sm font-semibold text-gray-900">
+                                    €{Number(housing.billsMonthlyEstimate)}
+                                  </span>
+                                </div>
+                              )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
                   {/* Availability Dates */}
-                  <div className="flex flex-col  gap-1">
+                  <div className="bg-gradient-to-br from-blue-50/50 to-white rounded-xl p-4 border border-blue-100/50 space-y-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold text-gray-500 uppercase mb-1">
-                        {isTemporary ? 'Check-in' : 'Available'}
-                      </p>
-                      <p className="text-sm font-semibold text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-emerald-100">
+                          <AvailabilityIcon className="w-3.5 h-3.5 text-emerald-600" />
+                        </div>
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                          {isTemporary ? 'Check-in' : 'Available'}
+                        </span>
+                      </div>
+                      <span className="text-sm font-bold text-gray-900">
                         {formatDate(housing.availabilityStartDate)}
-                      </p>
+                      </span>
                     </div>
                     {isTemporary && housing.availabilityEndDate && (
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold text-gray-500 uppercase mb-1">
-                          Check-out
-                        </p>
-                        <p className="text-sm font-semibold text-gray-900">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-lg bg-red-100">
+                            <AvailabilityIcon className="w-3.5 h-3.5 text-red-600" />
+                          </div>
+                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            Check-out
+                          </span>
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">
                           {formatDate(housing.availabilityEndDate)}
-                        </p>
+                        </span>
                       </div>
                     )}
                   </div>
 
-                  {/* Contact Button - Always show if handle exists */}
+                  {/* Contact Button */}
                   <Button
-                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md"
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-lg shadow-blue-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5"
                     size="lg"
                     asChild
                   >
@@ -799,7 +962,7 @@ export function HousingAdDetails({
                       className="flex items-center justify-center gap-2"
                     >
                       <RiTelegram2Fill className="w-5 h-5" />
-                      <span>Contact Owner</span>
+                      <span className="font-semibold">Contact Owner</span>
                     </a>
                   </Button>
                 </div>

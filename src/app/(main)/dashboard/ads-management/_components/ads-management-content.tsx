@@ -74,7 +74,7 @@ export function AdsManagementContent() {
 
       <div className="mx-auto pb-2">
         <div className="flex flex-col gap-4 lg:flex-row lg:justify-between">
-          <div className="py-4 md:px-4 bg-white shadow-lg md:rounded-3xl w-full space-y-4 lg:mr-auto lg:max-w-[900px] lg:min-w-[600px] lg:flex-4">
+          <div className="py-4 md:px-4 bg-neutral-50 shadow-lg md:rounded-3xl w-full space-y-4 lg:mr-auto lg:max-w-[900px] lg:min-w-[600px] lg:flex-4">
             <div className="px-2">
               <div className="flex items-center gap-8">
                 <StatusFilters

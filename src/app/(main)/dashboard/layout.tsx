@@ -20,7 +20,7 @@ export default async function DashboardLayout({
 
   return (
     <div
-      className=""
+      className="bg-neutral-100"
       style={{
         backgroundImage: `
         linear-gradient(to right, #e5e7eb60 1px, transparent 1px),
