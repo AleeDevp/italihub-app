@@ -2,7 +2,10 @@
 
 import { DEFAULT_AD_DETAIL_VARIANT } from '@/components/ad-details/types';
 import { HousingDialog } from '@/components/ad-forms/housing/housing-dialog';
+import { OptimizedImage } from '@/components/optimized-image';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   Dialog,
@@ -11,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 import { AD_CATEGORY_BY_ID } from '@/constants/ad-categories';
 import { AD_DETAIL_COMPONENTS } from '@/constants/ad-detail-components';
 import type { AdWithDetails, AdWithHousing } from '@/data/ads/ads';
@@ -23,13 +27,15 @@ import {
   AlertCircle,
   ArrowLeft,
   BarChart3,
-  Calendar,
+  CalendarDays,
   CalendarX,
   CheckCircle2,
   Clock,
   Edit,
   Eye,
+  Info,
   Loader2,
+  MapPin,
   MousePointerClick,
   RefreshCcw,
   Trash2,
@@ -242,10 +248,10 @@ export function AdDetailContent({ ad }: AdDetailContentProps) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto space-y-6 pb-10">
       {/* Header with Actions */}
-      <div className="sticky  top-12 md:top-12 z-40 bg-white border-b shadow-xs py-3 px-4">
-        <div className="flex items-center justify-between">
+      <div className="sticky top-12 z-40 bg-white/80 backdrop-blur-md border-b shadow-sm py-3 px-4 -mx-4 md:mx-0 md:rounded-b-xl transition-all duration-200">
+        <div className="flex items-center justify-between max-w-6xl mx-auto">
           <Button variant="ghost" onClick={() => router.back()} className="gap-2 hover:bg-gray-100">
             <ArrowLeft className="w-4 h-4" />
             Back to Ads list
@@ -278,55 +284,43 @@ export function AdDetailContent({ ad }: AdDetailContentProps) {
         </div>
       </div>
 
-      {/* Windows Layout */}
-      <div className="mt-4 space-y-4 mb-6">
-        {/* Status Window - Full Width Top */}
-        <div>
-          <h2 className="text-base font-semibold text-gray-900 mb-3">Status</h2>
-          <div
-            className={cn(
-              'relative overflow-hidden rounded-2xl border p-4',
-              statusConfig.bgColor,
-              statusConfig.borderColor
-            )}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-3">
-                <div className={cn('p-2 rounded-xl', statusConfig.iconBgColor)}>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Status & Key Actions (1/3) */}
+        <div className="space-y-6">
+          {/* Status Card */}
+          <Card className={cn('border-l-4 shadow-sm', statusConfig.borderColor)}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3 mb-3">
+                <div className={cn('p-2 rounded-full', statusConfig.iconBgColor)}>
                   <statusConfig.icon className={cn('w-5 h-5', statusConfig.iconColor)} />
                 </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">{statusConfig.title}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed max-w-2xl">
-                    {statusConfig.description}
-                  </p>
-
-                  {/* Rejection Details */}
-                  {ad.status === 'REJECTED' && (
-                    <div className="mt-3 space-y-2 p-3 rounded-xl bg-white/60 border border-rose-200">
-                      <div>
-                        <p className="text-xs text-rose-600 font-medium mb-1">Reason</p>
-                        <p className="text-sm font-medium text-gray-900">Policy Violation</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-rose-600 font-medium mb-1">Rejected On</p>
-                        <p className="text-sm text-gray-600">{formatDate(ad.updatedAt)}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <span className={cn('text-lg font-bold', statusConfig.iconColor)}>
+                  {statusConfig.title}
+                </span>
               </div>
+              <p className="text-sm text-gray-600 mb-4">{statusConfig.description}</p>
 
-              {/* Action Button */}
+              {/* Rejection Details */}
+              {ad.status === 'REJECTED' && (
+                <div className="bg-red-50 border border-red-100 rounded-lg p-3 mb-4">
+                  <p className="text-xs font-bold text-red-700 uppercase mb-1">Reason</p>
+                  <p className="text-sm text-red-600">Policy Violation</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    Rejected on {formatDate(ad.updatedAt)}
+                  </p>
+                </div>
+              )}
+
               {statusConfig.button && (
                 <Button
-                  size="sm"
-                  className={cn(
-                    'h-9 text-sm font-medium',
-                    ad.status === 'REJECTED'
-                      ? 'bg-rose-600 hover:bg-rose-700'
-                      : 'bg-gray-900 hover:bg-gray-800'
-                  )}
+                  className="w-full"
+                  variant={ad.status === 'REJECTED' ? 'destructive' : 'default'}
                   onClick={() => handleOpenEditDialog(editButtonConfig.initialStep)}
                 >
                   {ad.status === 'EXPIRED' ? (
@@ -337,171 +331,177 @@ export function AdDetailContent({ ad }: AdDetailContentProps) {
                   {statusConfig.button.label}
                 </Button>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+
+          {/* Performance Card */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 text-blue-600 rounded-md">
+                    <Eye className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">Total Views</span>
+                </div>
+                <span className="text-xl font-bold text-gray-900">{ad.viewsCount}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-100 text-emerald-600 rounded-md">
+                    <MousePointerClick className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">Contacts</span>
+                </div>
+                <span className="text-xl font-bold text-gray-900">{ad.contactClicksCount}</span>
+              </div>
+              <Button variant="outline" className="w-full text-xs h-8">
+                <BarChart3 className="w-3 h-3 mr-2" />
+                Detailed Analytics
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Category Info Window - Full Width with Performance Inside */}
-        <div>
-          <h2 className="text-base font-semibold text-gray-900 mb-3">Ad Information</h2>
-          <div
-            className={cn(
-              'relative overflow-hidden rounded-2xl border',
-              categoryMeta?.bgPrimaryColor
-            )}
-          >
-            {/* Background Pattern */}
-            {Icon && (
-              <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
-                <div
-                  className="absolute -right-8 -top-8 w-[500px] h-[500px] rotate-12"
-                  style={{
-                    maskImage:
-                      'radial-gradient(ellipse 140% 100% at top right, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 75%)',
-                    WebkitMaskImage:
-                      'radial-gradient(ellipse 140% 100% at top right, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 75%)',
-                  }}
-                >
-                  <div className={cn('relative w-full h-full', getPatternColor(ad.category))}>
-                    {Array.from({ length: 40 }).map((_, i) => (
-                      <Icon
-                        key={i}
-                        className="absolute"
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          left: `${(i % 5) * 80 + 12}px`,
-                          top: `${Math.floor(i / 5) * 60 + 12}px`,
-                        }}
-                        strokeWidth={1.5}
-                      />
-                    ))}
-                  </div>
+        {/* Right Column: Ad Details (2/3) */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="shadow-sm overflow-hidden border-0 ring-1 ring-gray-200">
+            <div className="relative h-32 bg-gradient-to-r from-gray-100 to-gray-200">
+              {/* Background Pattern or Cover Blur */}
+              {ad.coverMedia && (
+                <div className="absolute inset-0">
+                  <OptimizedImage
+                    storageKey={ad.coverMedia.storageKey}
+                    imageType="cover"
+                    alt="Cover Background"
+                    className="w-full h-full object-cover opacity-50 blur-sm"
+                  />
                 </div>
-              </div>
-            )}
+              )}
+              <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-white to-transparent" />
+            </div>
 
-            <div className="relative p-6 grid grid-cols-3 gap-6">
-              {/* Performance Window - Left 1/3 */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-gray-900">Performance</h3>
-
-                {/* Views */}
-                <div className="p-4 rounded-xl bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-blue-50">
-                      <Eye className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-medium">Views</p>
-                      <p className="text-2xl font-semibold text-gray-900 mt-0.5">{ad.viewsCount}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Contacts */}
-                <div className="p-4 rounded-xl bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-emerald-50">
-                      <MousePointerClick className="w-4 h-4 text-emerald-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-medium">Contacts</p>
-                      <p className="text-2xl font-semibold text-gray-900 mt-0.5">
-                        {ad.contactClicksCount}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Analytics Button */}
-                <Button
-                  variant="outline"
-                  className="w-full h-10 text-sm font-medium bg-white/90 hover:bg-white border-gray-300"
-                >
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  View Analytics
-                </Button>
-              </div>
-
-              {/* Category & Date Info - Right 2/3 */}
-              <div className="col-span-2 space-y-4">
-                {/* Category */}
-                <div className="flex items-center gap-3">
-                  {Icon && (
+            <CardContent className="relative pt-0 px-6 pb-6">
+              <div className="flex flex-col sm:flex-row items-start gap-6 -mt-12">
+                {/* Main Image / Icon */}
+                <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-xl border-4 border-white shadow-md bg-white overflow-hidden flex items-center justify-center shrink-0">
+                  {ad.coverMedia ? (
+                    <OptimizedImage
+                      storageKey={ad.coverMedia.storageKey}
+                      imageType="thumbnail"
+                      alt="Ad Cover"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
                     <div
                       className={cn(
-                        'flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-md',
+                        'w-full h-full flex items-center justify-center',
                         categoryMeta?.bgSecondaryColor
                       )}
                     >
-                      <Icon className="h-5 w-5" />
+                      {Icon && <Icon className="w-12 h-12 text-white" />}
                     </div>
                   )}
-                  <div>
-                    <p className="text-xs text-gray-600 font-medium">Category</p>
-                    <h3 className="text-lg font-semibold text-gray-900 capitalize">
-                      {categoryMeta?.name ?? ad.category.toLowerCase()}
-                    </h3>
-                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Posted Date */}
-                  <div className="p-4 rounded-xl bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-purple-50">
-                        <Calendar className="w-4 h-4 text-purple-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-600 font-medium mb-1">Posted</p>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {formatDate(ad.createdAt)}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {Math.floor(
-                            (new Date().getTime() - new Date(ad.createdAt).getTime()) / 86400000
-                          )}{' '}
-                          days ago
-                        </p>
-                      </div>
+                {/* Title & Meta */}
+                <div className="flex-1 pt-2 sm:pt-12 space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="secondary" className="hover:bg-gray-200 transition-colors">
+                      {categoryMeta?.name}
+                    </Badge>
+                    <span className="text-gray-300 hidden sm:inline">|</span>
+                    <div className="flex items-center text-sm text-gray-500">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      {ad.city.name}
                     </div>
                   </div>
-
-                  {/* Expiration Date */}
-                  {ad.expirationDate && expirationDetails && (
-                    <div className="p-4 rounded-xl bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-orange-50">
-                          <Clock className="w-4 h-4 text-orange-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs text-gray-600 font-medium mb-1">Expires</p>
-                          <p className="text-sm font-semibold text-gray-900">
-                            {formatDate(ad.expirationDate)}
-                          </p>
-                          <span
-                            className={cn(
-                              'inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold mt-2',
-                              getExpirationColor(expirationDetails.daysLeft)
-                            )}
-                          >
-                            <Clock className="w-3 h-3" />
-                            {formatDaysLeftLabel(expirationDetails.daysLeft)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {categoryMeta?.name} Ad #{ad.id}
+                  </h1>
+                  <p className="text-sm text-gray-500">Created on {formatDate(ad.createdAt)}</p>
                 </div>
               </div>
-            </div>
-          </div>
+
+              <Separator className="my-6" />
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <Info className="w-4 h-4 text-primary" />
+                    General Info
+                  </h3>
+                  <dl className="space-y-3 text-sm">
+                    <div className="flex justify-between py-1 border-b border-gray-50">
+                      <dt className="text-gray-500">Category</dt>
+                      <dd className="font-medium text-gray-900">{categoryMeta?.name}</dd>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-50">
+                      <dt className="text-gray-500">Location</dt>
+                      <dd className="font-medium text-gray-900">{ad.city.name}</dd>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-50">
+                      <dt className="text-gray-500">Ad ID</dt>
+                      <dd className="font-medium text-gray-900 font-mono text-xs">#{ad.id}</dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <CalendarDays className="w-4 h-4 text-primary" />
+                    Timeline
+                  </h3>
+                  <dl className="space-y-3 text-sm">
+                    <div className="flex justify-between py-1 border-b border-gray-50">
+                      <dt className="text-gray-500">Posted</dt>
+                      <dd className="font-medium text-gray-900">{formatDate(ad.createdAt)}</dd>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-50">
+                      <dt className="text-gray-500">Last Updated</dt>
+                      <dd className="font-medium text-gray-900">{formatDate(ad.updatedAt)}</dd>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-50">
+                      <dt className="text-gray-500">Expires</dt>
+                      <dd
+                        className={cn(
+                          'font-medium',
+                          ad.expirationDate ? 'text-gray-900' : 'text-gray-400'
+                        )}
+                      >
+                        {ad.expirationDate ? formatDate(ad.expirationDate) : 'Never'}
+                      </dd>
+                    </div>
+                    {ad.expirationDate && expirationDetails && (
+                      <div className="mt-2">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'w-full justify-center py-1 border-0 bg-gray-50',
+                            getExpirationColor(expirationDetails.daysLeft)
+                          )}
+                        >
+                          <Clock className="w-3 h-3 mr-1" />
+                          {formatDaysLeftLabel(expirationDetails.daysLeft)}
+                        </Badge>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      {/* Category-specific details */}
-      <div className="-mt-2">{renderCategoryDetails()}</div>
+      {/* Category Specific Content */}
+      <div className="pt-2">{renderCategoryDetails()}</div>
 
       {/* Edit Dialog - Only render for housing ads */}
       {ad.category === 'HOUSING' && 'housing' in ad && ad.housing && (

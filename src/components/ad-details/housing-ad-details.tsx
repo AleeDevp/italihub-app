@@ -14,16 +14,18 @@ import type { AdWithHousing } from '@/data/ads/ads';
 import { getOptimizedUrl } from '@/lib/image_system/image-utils-client';
 import { cn, formatDate } from '@/lib/utils';
 import {
-  ArrowRight,
+  Banknote,
   Calendar,
   ChevronLeft,
   ChevronRight,
   Edit,
   Eye,
+  LogIn,
+  LogOut,
   MousePointerClick,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { FaRoad } from 'react-icons/fa';
+import { FaBan, FaCalendar, FaFileContract, FaRoad } from 'react-icons/fa';
 import { FaClock, FaLocationDot, FaPeoplePulling, FaPeopleRoof } from 'react-icons/fa6';
 import { MdLocationCity, MdStickyNote2 } from 'react-icons/md';
 import { RiTelegram2Fill } from 'react-icons/ri';
@@ -399,99 +401,154 @@ export function HousingAdDetails({
 
             {/* Availability Section */}
             <Section title="Availability" icon={AvailabilityIcon}>
-              <div className="">
-                <div className="">
-                  {isTemporary ? (
-                    <div className="relative ">
-                      {/* Check-in and Check-out in one elegant row */}
-                      <div className="flex flex-col md:flex-row w-full items-center justify-between gap-2 md:gap-4">
-                        {/* Check-in */}
-                        <div className="flex-1 w-full flex items-center gap-3 border rounded-3xl p-3">
-                          <div className="p-2.5 rounded-xl bg-emerald-100/80 border border-emerald-200/60">
-                            <AvailabilityIcon className="w-4 h-4 text-emerald-700" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-[10px] uppercase tracking-widest text-emerald-700/80 font-bold mb-0.5">
-                              Check-in
-                            </p>
-                            <p className="text-sm text-gray-900">
-                              {formatDate(housing.availabilityStartDate)}
-                            </p>
-                          </div>
-                        </div>
+              {/* Permanent Housing Layout */}
+              {isPermanent && (
+                <div className="bg-white rounded-3xl border border-gray-100 p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100 shrink-0">
+                      <FaCalendar className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider mb-0.5">
+                        Available From
+                      </p>
+                      <p className="text-lg font-bold text-gray-900 truncate">
+                        {formatDate(housing.availabilityStartDate)}
+                      </p>
+                    </div>
 
-                        {/* Duration with Arrow */}
-                        {duration !== null && (
-                          <div className="flex flex-row md:flex-col gap-1 items-center justify-center ">
-                            <ArrowRight className="w-4 h-4 text-gray-400 rotate-90 md:rotate-0" />
-                            <div className="flex gap-1 text-center border rounded-3xl p-1 px-2 bg-gray-100">
-                              <p className="text-xs font-semibold text-gray-900 leading-none">
-                                {duration}
-                              </p>
-                              <p className="text-[9px] uppercase tracking-wider text-gray-500 font-semibold">
-                                {duration !== 1 ? 'nights' : 'night'}
-                              </p>
-                            </div>
-                          </div>
+                    <div className="flex flex-col items-end gap-1.5 md:gap-2">
+                      <div
+                        className={cn(
+                          'flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider border shrink-0',
+                          housing.contractType === 'LONG_TERM' &&
+                            'bg-emerald-50 text-emerald-700 border-emerald-200',
+                          housing.contractType === 'SHORT_TERM' &&
+                            'bg-orange-50 text-orange-700 border-orange-200',
+                          (!housing.contractType || housing.contractType === 'NONE') &&
+                            'bg-red-50 text-red-700 border-red-200'
                         )}
+                      >
+                        {housing.contractType === 'LONG_TERM' && (
+                          <FaFileContract className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                        )}
+                        {housing.contractType === 'SHORT_TERM' && (
+                          <FaClock className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                        )}
+                        {(!housing.contractType || housing.contractType === 'NONE') && (
+                          <FaBan className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                        )}
+                        <span>
+                          {housing.contractType === 'LONG_TERM'
+                            ? 'Long Term'
+                            : housing.contractType === 'SHORT_TERM'
+                              ? 'Short Term'
+                              : 'No Contract'}
+                        </span>
+                      </div>
 
-                        {/* Check-out */}
-                        {housing.availabilityEndDate && (
-                          <div className="flex-1 w-full flex items-center gap-3 border rounded-3xl p-3">
-                            <div className="p-2.5 rounded-xl bg-red-100/80 border border-red-200/60">
-                              <AvailabilityIcon className="w-4 h-4 text-red-700" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-[10px] uppercase tracking-widest text-red-700/80 font-bold mb-0.5">
-                                Check-out
-                              </p>
-                              <p className="text-sm  text-gray-900">
-                                {formatDate(housing.availabilityEndDate)}
-                              </p>
-                            </div>
-                          </div>
-                        )}
+                      <div className="flex items-center gap-1 md:gap-1.5 text-[9px] md:text-[10px] font-medium">
+                        <span className="text-gray-400 uppercase tracking-wider">Residenza</span>
+                        <span
+                          className={cn(
+                            'flex items-center ',
+                            housing.residenzaAvailable ? 'text-emerald-600' : 'text-red-600'
+                          )}
+                        >
+                          {housing.residenzaAvailable ? (
+                            <span className="text-[8px] md:text-[9px]">✓</span>
+                          ) : (
+                            <span className="text-[8px] md:text-[9px]">✕</span>
+                          )}
+                        </span>
                       </div>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Single Date for Permanent */}
-                      <div className="w-full flex items-center gap-3 border rounded-3xl p-3">
-                        <div className="p-2.5 rounded-xl bg-emerald-100/80 border border-emerald-200/60">
-                          <AvailabilityIcon className="w-4 h-4 text-emerald-700" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-[10px] uppercase tracking-widest text-emerald-700/80 font-bold mb-0.5">
-                            Available from
-                          </p>
-                          <p className="text-sm text-gray-900">
-                            {formatDate(housing.availabilityStartDate)}
-                          </p>
-                        </div>
-                      </div>
-                      {/* Contract Details */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <p className="text-xs uppercase tracking-wide text-gray-500 font-medium">
-                            Contract
-                          </p>
-                          <p className="text-sm  text-gray-900">
-                            {formatEnumLabel(housing.contractType)}
-                          </p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-xs uppercase tracking-wide text-gray-500 font-medium">
-                            Residenza
-                          </p>
-                          <p className="text-sm  text-gray-900">
-                            {housing.residenzaAvailable ? 'Available' : 'Not Available'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Temporary Housing Layout */}
+              {isTemporary && housing.availabilityEndDate && (
+                <div className="space-y-4">
+                  {/* Desktop View */}
+                  <div className="hidden md:flex items-center justify-between gap-4 bg-white">
+                    <div className="flex-1 flex items-center gap-3 rounded-3xl border border-gray-200 p-5">
+                      <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-600 border border-emerald-100">
+                        <LogIn className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">
+                          Check-in
+                        </p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {formatDate(housing.availabilityStartDate)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center px-4 ">
+                      <span className="text-[12px] text-gray-400 ">{duration} Nights</span>
+                      <div className="flex items-center text-gray-200">
+                        <div className="h-[2px] w-12 bg-gray-200"></div>
+                        <ChevronRight className="w-4 h-4 -ml-1 text-gray-300" />
+                      </div>
+                    </div>
+
+                    <div className="flex-1 flex items-center gap-3 rounded-3xl border border-gray-200 p-5">
+                      <div className="p-2.5 bg-red-50 rounded-xl text-red-600 border border-red-100">
+                        <LogOut className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">
+                          Check-out
+                        </p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {formatDate(housing.availabilityEndDate)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mobile View */}
+                  <div className="md:hidden space-y-3">
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white">
+                      <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600 border border-emerald-100">
+                        <LogIn className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">
+                          Check-in
+                        </p>
+                        <p className="text-sm font-bold text-gray-900">
+                          {formatDate(housing.availabilityStartDate)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-px flex-1 bg-gray-100"></div>
+                      <span className="text-xs font-semibold text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                        {duration} Nights Stay
+                      </span>
+                      <div className="h-px flex-1 bg-gray-100"></div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white">
+                      <div className="p-2 bg-red-50 rounded-lg text-red-600 border border-red-100">
+                        <LogOut className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">
+                          Check-out
+                        </p>
+                        <p className="text-sm font-bold text-gray-900">
+                          {formatDate(housing.availabilityEndDate)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </Section>
 
             {/* Price Section - Mobile Only */}
@@ -504,32 +561,25 @@ export function HousingAdDetails({
 
               <div className="px-2 space-y-5">
                 {/* Price Section - Hero Style */}
-                <div className="relative bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 rounded-2xl p-5 shadow-lg shadow-blue-500/20 overflow-hidden">
+                <div className="relative bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 rounded-2xl p-5 shadow-sm border border-emerald-100 overflow-hidden">
                   {/* Decorative elements */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-                  <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+                  <Banknote className="absolute top-0 right-0 w-32 h-32 text-emerald-900/5 -rotate-12 -translate-y-8 translate-x-8" />
+                  <Banknote className="absolute bottom-0 left-0 w-24 h-24 text-emerald-900/5 rotate-12 translate-y-8 -translate-x-8" />
 
-                  <div className="relative flex justify-between items-center">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-blue-100 text-xs font-semibold uppercase tracking-wider">
-                        Monthly Rent
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        <div className="p-1.5 rounded-lg bg-white/20 backdrop-blur-sm">
-                          <PriceIcon className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="text-white/80 text-sm font-medium">Price</span>
-                      </div>
+                  <div className="relative flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                      <PriceIcon className="w-5 h-5 text-emerald-700" />
+                      <span className="text-emerald-900 text-lg font-bold">Price</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-4xl font-extrabold text-white drop-shadow-sm">
+                      <span className="text-4xl font-extrabold text-emerald-900 drop-shadow-sm">
                         {priceDisplay.main}
                       </span>
                       {!priceNegotiable && (
-                        <p className="text-blue-100 text-sm font-medium">{priceDisplay.sub}</p>
+                        <p className="text-emerald-700 text-sm font-medium">{priceDisplay.sub}</p>
                       )}
                       {priceNegotiable && (
-                        <p className="text-blue-100 text-xs font-medium">{priceDisplay.sub}</p>
+                        <p className="text-emerald-700 text-xs font-medium">{priceDisplay.sub}</p>
                       )}
                     </div>
                   </div>
@@ -783,73 +833,34 @@ export function HousingAdDetails({
           <div className="hidden md:block md:col-span-1">
             <div className="sticky top-30 space-y-4">
               <div className="border bg-gradient-to-b from-white to-gray-50/50 rounded-3xl shadow-lg overflow-hidden">
-                {/* Card Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-4">
-                  <div className="flex items-center gap-2.5">
-                    <PriceIcon className="w-5 h-5 text-white" />
-                    <h3 className="text-white font-semibold text-lg">Pricing Details</h3>
+                {/* Price Section - Hero Style */}
+                <div className="relative bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 p-6 border-b border-emerald-100 overflow-hidden">
+                  {/* Decorative elements */}
+                  <Banknote className="absolute top-0 right-0 w-32 h-32 text-emerald-900/5 -rotate-12 -translate-y-8 translate-x-8" />
+                  <Banknote className="absolute bottom-0 left-0 w-24 h-24 text-emerald-900/5 rotate-12 translate-y-8 -translate-x-8" />
+
+                  <div className="relative flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                      {/* <Banknote className="w-5 h-5 text-emerald-700" /> */}
+                      <span className="text-emerald-900 text-lg font-bold">Rent</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-4xl font-extrabold text-emerald-900 drop-shadow-sm">
+                        {priceDisplay.main}
+                      </span>
+                      {!priceNegotiable && (
+                        <p className="text-emerald-700 text-sm font-medium">{priceDisplay.sub}</p>
+                      )}
+                      {priceNegotiable && (
+                        <p className="text-emerald-700 text-xs font-medium">{priceDisplay.sub}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 <div className="p-5 space-y-5">
-                  {/* Price Section - Hero Style */}
-                  <div className="relative bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 rounded-2xl p-5 shadow-lg shadow-blue-500/20 overflow-hidden">
-                    {/* Decorative elements */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-                    <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-
-                    <div className="relative flex justify-between items-center">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-blue-100 text-xs font-semibold uppercase tracking-wider">
-                          Monthly Rent
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          <div className="p-1.5 rounded-lg bg-white/20 backdrop-blur-sm">
-                            <PriceIcon className="w-4 h-4 text-white" />
-                          </div>
-                          <span className="text-white/80 text-sm font-medium">Price</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-4xl font-extrabold text-white drop-shadow-sm">
-                          {priceDisplay.main}
-                        </span>
-                        {!priceNegotiable && (
-                          <p className="text-blue-100 text-sm font-medium">{priceDisplay.sub}</p>
-                        )}
-                        {priceNegotiable && (
-                          <p className="text-blue-100 text-xs font-medium">{priceDisplay.sub}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
                   {isPermanent && (
                     <div className="space-y-4">
-                      {/* Contract Section */}
-                      <div className="flex justify-between items-center px-1">
-                        <span className="text-sm text-gray-600 font-medium">Contract</span>
-                        <span
-                          className={cn(
-                            'px-3 py-1.5 rounded-full text-xs font-bold shadow-sm',
-                            housing.contractType === 'LONG_TERM' &&
-                              'bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border border-emerald-200',
-                            housing.contractType === 'SHORT_TERM' &&
-                              'bg-gradient-to-r from-orange-100 to-orange-50 text-orange-700 border border-orange-200',
-                            (!housing.contractType || housing.contractType === 'NONE') &&
-                              'bg-gradient-to-r from-red-100 to-red-50 text-red-700 border border-red-200'
-                          )}
-                        >
-                          {housing.contractType === 'LONG_TERM'
-                            ? '✓ Long Term'
-                            : housing.contractType === 'SHORT_TERM'
-                              ? 'Short Term'
-                              : '✕ No contract'}
-                        </span>
-                      </div>
-
-                      <Separator className="bg-gray-100" />
-
                       {/* Deposit & Agency Fee Section */}
                       <div className="bg-gray-50/70 rounded-xl p-3 space-y-3 border border-gray-100">
                         <div className="flex justify-between items-center">
@@ -881,19 +892,16 @@ export function HousingAdDetails({
                       {/* Bills Section */}
                       {housing.billsPolicy && (
                         <>
-                          <Separator className="bg-gray-100" />
+                          <Separator className="bg-gray-200" />
                           <div className="space-y-3 px-1">
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-gray-600 font-medium">Bills</span>
                               <span
                                 className={cn(
-                                  'px-3 py-1 rounded-full text-xs font-bold shadow-sm',
-                                  housing.billsPolicy === 'INCLUDED' &&
-                                    'bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border border-emerald-200',
-                                  housing.billsPolicy === 'EXCLUDED' &&
-                                    'bg-gradient-to-r from-red-100 to-red-50 text-red-700 border border-red-200',
-                                  housing.billsPolicy === 'PARTIAL' &&
-                                    'bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200'
+                                  ' text-xs pr-2',
+                                  housing.billsPolicy === 'INCLUDED' && ' text-emerald-700 ',
+                                  housing.billsPolicy === 'EXCLUDED' && ' text-red-700 ',
+                                  housing.billsPolicy === 'PARTIAL' && ' text-amber-700 '
                                 )}
                               >
                                 {housing.billsPolicy === 'INCLUDED' && '✓ '}
@@ -912,23 +920,25 @@ export function HousingAdDetails({
                                 </div>
                               )}
                           </div>
+                          <Separator className="bg-gray-100" />
                         </>
                       )}
                     </div>
                   )}
+                  <Separator className="bg-gray-200" />
 
                   {/* Availability Dates */}
-                  <div className="bg-gradient-to-br from-blue-50/50 to-white rounded-xl p-4 border border-blue-100/50 space-y-2">
+                  <div className="space-y-2 px-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg bg-emerald-100">
-                          <AvailabilityIcon className="w-3.5 h-3.5 text-emerald-600" />
+                          <LogIn className="w-3.5 h-3.5 text-emerald-600" />
                         </div>
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                           {isTemporary ? 'Check-in' : 'Available'}
                         </span>
                       </div>
-                      <span className="text-sm font-bold text-gray-900">
+                      <span className="text-sm  text-gray-900">
                         {formatDate(housing.availabilityStartDate)}
                       </span>
                     </div>
@@ -936,18 +946,57 @@ export function HousingAdDetails({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="p-1.5 rounded-lg bg-red-100">
-                            <AvailabilityIcon className="w-3.5 h-3.5 text-red-600" />
+                            <LogOut className="w-3.5 h-3.5 text-red-600" />
                           </div>
                           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                             Check-out
                           </span>
                         </div>
-                        <span className="text-sm font-bold text-gray-900">
+                        <span className="text-sm  text-gray-900">
                           {formatDate(housing.availabilityEndDate)}
                         </span>
                       </div>
                     )}
                   </div>
+
+                  {isPermanent ? (
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide shrink-0">
+                        Contract
+                      </span>
+                      <Separator className="flex-1 bg-gray-200" />
+                      <div
+                        className={cn(
+                          'flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border shrink-0',
+                          housing.contractType === 'LONG_TERM' &&
+                            'bg-emerald-50 text-emerald-700 border-emerald-200',
+                          housing.contractType === 'SHORT_TERM' &&
+                            'bg-orange-50 text-orange-700 border-orange-200',
+                          (!housing.contractType || housing.contractType === 'NONE') &&
+                            'bg-red-50 text-red-700 border-red-200'
+                        )}
+                      >
+                        {housing.contractType === 'LONG_TERM' && (
+                          <FaFileContract className="w-2.5 h-2.5" />
+                        )}
+                        {housing.contractType === 'SHORT_TERM' && (
+                          <FaClock className="w-2.5 h-2.5" />
+                        )}
+                        {(!housing.contractType || housing.contractType === 'NONE') && (
+                          <FaBan className="w-2.5 h-2.5" />
+                        )}
+                        <span>
+                          {housing.contractType === 'LONG_TERM'
+                            ? 'Long Term'
+                            : housing.contractType === 'SHORT_TERM'
+                              ? 'Short Term'
+                              : 'No Contract'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <Separator className="bg-gray-200" />
+                  )}
 
                   {/* Contact Button */}
                   <Button
